@@ -35,11 +35,14 @@ class MainWindow(QMainWindow):
 
         layout = self.ui_manager.setup_central_widget()
 
-        self.settings: Settings = Settings(
-            "playlist_configuration",
-            os.path.join(user_config_dir(), self.application_name),
+        config_dir = os.path.join(user_config_dir(), self.application_name)
+        os.makedirs(config_dir, exist_ok=True)
+
+        self.playlist_configuration: Settings = Settings(
+            "playlist_configuration", config_dir, self.application_name
         )
-        self.settings.load()
+        self.playlist_configuration.ensure_default_config()
+        self.playlist_configuration.load()
 
         self.playlist_manager = PlaylistManager(self.application_name)
 
@@ -118,10 +121,10 @@ class MainWindow(QMainWindow):
             column_manager.save_to_json(config_path)
 
     def add_playlist(self, playlist: Playlist, column_manager: ColumnManager) -> None:
-        icons = Icons(self.settings, self.style())
+        icons = Icons(self.playlist_configuration, self.style())
         playlist_view = PlaylistTreeView(
             icons,
-            self.settings,
+            self.playlist_configuration,
             playlist,
             column_manager,
             self.column_default_definitions,
@@ -145,6 +148,34 @@ class MainWindow(QMainWindow):
     def add_playlist_with_manager(self, playlist: Playlist) -> None:
         column_manager = ColumnManager(self.column_default_definitions)
         self.add_playlist(playlist, column_manager)
+
+    def add_files(self) -> None:
+        file_paths, _ = QFileDialog.getOpenFileNames(
+            self, "Add Files", "", "All Files (*);;Audio Files (*.mp3 *.wav *.flac)"
+        )
+        if file_paths:
+            current_index = self.tab_widget.currentIndex()
+            if current_index != -1:
+                playlist = self.playlist_manager.playlists[current_index]
+                # playlist.add_songs(file_paths)
+                logger.info(f"Added files to playlist: {playlist.name}")
+
+    def add_folder(self) -> None:
+        folder_path = QFileDialog.getExistingDirectory(self, "Add Folder", "")
+        if folder_path:
+            # Collect all audio files in the folder
+            audio_files = []
+            for root, _, files in os.walk(folder_path):
+                for file in files:
+                    if file.endswith((".mp3", ".wav", ".flac")):
+                        audio_files.append(os.path.join(root, file))
+
+            if audio_files:
+                current_index = self.tab_widget.currentIndex()
+                if current_index != -1:
+                    playlist = self.playlist_manager.playlists[current_index]
+                    # playlist.add_songs(audio_files)
+                    logger.info(f"Added folder to playlist: {playlist.name}")
 
 
 if __name__ == "__main__":
