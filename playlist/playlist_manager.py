@@ -56,7 +56,7 @@ class PlaylistManager:
                 return Playlist(
                     id=playlist_data["id"],
                     name=playlist_data["name"],
-                    items=playlist_data["data"],
+                    song_ids=playlist_data["song_ids"],
                 )
         except (json.JSONDecodeError, KeyError, FileNotFoundError) as e:
             logger.error(f"Failed to load playlist from {file_path}: {e}")
@@ -69,7 +69,7 @@ class PlaylistManager:
                     {
                         "id": playlist.id,
                         "name": playlist.name,
-                        "data": playlist.get_items(),
+                        "song_ids": playlist.get_songs(),
                     },
                     f,
                     indent=4,

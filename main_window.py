@@ -3,7 +3,7 @@ import os
 import sys
 from typing import Any, Dict, List
 
-from appdirs import user_config_dir
+from appdirs import user_config_dir, user_data_dir
 from importlib_resources import files
 from loguru import logger
 from PySide6.QtWidgets import (
@@ -18,6 +18,8 @@ from playlist.playlist import Playlist
 from playlist.playlist_manager import PlaylistManager
 from playlist.playlist_tab_widget import PlaylistTabWidget
 from playlist.playlist_tree_view import PlaylistTreeView
+from playlist.song import Song
+from playlist.song_library import SongLibrary
 from settings.settings import Settings
 from ui_manager import UIManager
 
@@ -37,6 +39,9 @@ class MainWindow(QMainWindow):
 
         config_dir = os.path.join(user_config_dir(), self.application_name)
         os.makedirs(config_dir, exist_ok=True)
+
+        data_dir = os.path.join(user_data_dir(), self.application_name)
+        os.makedirs(data_dir, exist_ok=True)
 
         self.playlist_configuration: Settings = Settings(
             "playlist_configuration", config_dir, self.application_name
@@ -67,10 +72,31 @@ class MainWindow(QMainWindow):
         self.column_managers: dict[str, ColumnManager] = {}
 
         # Load playlists and add tabs
-        self.playlist_manager.load_playlists()
-        for playlist in self.playlist_manager.playlists:
-            column_manager = self.load_or_create_column_manager(playlist)
-            self.add_playlist(playlist, column_manager)
+        # self.playlist_manager.load_playlists()
+        # for playlist in self.playlist_manager.playlists:
+        #     column_manager = self.load_or_create_column_manager(playlist)
+        #     self.add_playlist(playlist, column_manager)
+
+        self.song_library = SongLibrary(os.path.join(data_dir, "song_library.db"))
+
+        # Example songs
+        example_songs = [
+            Song(title="song1.mp3", file_path="path/to/song1.mp3", artist="Artist 1"),
+            Song(title="song2.mp3", file_path="path/to/song2.mp3", artist="Artist 2"),
+        ]
+        # for song in example_songs:
+        #     self.song_library.add_song(song)
+
+        playlist = Playlist(
+            id="example_playlist",
+            name="Example Playlist",
+        )
+
+        for song in self.song_library.get_all_songs():
+            playlist.add_song(song.id)
+
+        column_manager = self.load_or_create_column_manager(playlist)
+        self.add_playlist(playlist, column_manager)
 
     def create_new_playlist(self) -> None:
         playlist = Playlist(name="New Playlist")
@@ -128,6 +154,7 @@ class MainWindow(QMainWindow):
             playlist,
             column_manager,
             self.column_default_definitions,
+            self.song_library,
             self,
         )
 

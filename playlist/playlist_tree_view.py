@@ -24,6 +24,7 @@ from icons import Icons
 from playlist.column_manager import ColumnManager
 from playlist.playlist import Playlist
 from playlist.playlist_model import PlaylistModel
+from playlist.song_library import SongLibrary
 from settings.settings import Settings
 
 # from tree_view_columns import tree_view_columns_dict
@@ -64,6 +65,7 @@ class PlaylistTreeView(QTreeView):
         playlist: Playlist,
         column_manager: ColumnManager,
         default_columns_definitions: List[Dict[str, Any]],
+        song_library: SongLibrary,
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
@@ -73,6 +75,7 @@ class PlaylistTreeView(QTreeView):
         self.playlist = playlist
         self.column_manager = column_manager
         self.default_columns_definitions = default_columns_definitions
+        self.song_library = song_library
 
         # Enable drag-and-drop reordering
         self.setDragEnabled(True)
@@ -98,7 +101,7 @@ class PlaylistTreeView(QTreeView):
         self.setModel(model)
         self.model().rowsMoved.connect(self.on_rows_moved)
 
-        self.set_playlist_data(self.playlist.get_items())
+        self.set_playlist_data(self.get_playlist_data())
         self.remove_invisible_columns()
         self.set_column_widths(self.column_manager.get_column_widths())
 
@@ -145,9 +148,6 @@ class PlaylistTreeView(QTreeView):
         for row_data in data:
             self.add_row(row_data)
 
-    def get_playlist_data(self) -> List[Dict[str, Any]]:
-        return self.playlist.get_items()
-
     def add_row(self, row_data: Dict[str, Any]) -> None:
         tree_cols = []
         for column_def in self.default_columns_definitions:
@@ -158,7 +158,8 @@ class PlaylistTreeView(QTreeView):
 
     def remove_row(self, row: int) -> None:
         self.playlist_model.removeRow(row)
-        self.playlist.remove_item(row)
+        song_id = self.playlist.get_songs()[row]
+        self.playlist.remove_song(song_id)
 
     def get_selected_rows(self) -> List[int]:
         return sorted(set(index.row() for index in self.selectedIndexes()))
@@ -254,3 +255,20 @@ class PlaylistTreeView(QTreeView):
                 model.removeColumn(i)
             else:
                 i += 1
+
+    def get_playlist_data(self) -> List[Dict[str, Any]]:
+        songs = self.playlist.get_song_metadata(self.song_library)
+
+        data = []
+        for song in songs:
+            row_data = {}
+            for column_def in self.default_columns_definitions:
+                col_id = column_def.get("id", "")
+                if col_id == "title":
+                    row_data[col_id] = song.title
+                elif col_id == "artist":
+                    row_data[col_id] = song.artist
+                elif col_id == "file_path":
+                    row_data[col_id] = song.file_path
+            data.append(row_data)
+        return data
