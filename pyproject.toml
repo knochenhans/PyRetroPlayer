@@ -1,0 +1,37 @@
+[tool.pytest.ini_options]
+pythonpath = [
+  ".", "src", "tests", "src/PyRetroPlayer", "tests/PyRetroPlayer",
+]
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling", "hatch-requirements-txt"]
+
+[project]
+authors = [
+  {name = "Andre Jonas", email = "nipsky@gmail.com"},
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+description = ""
+dynamic = ["dependencies"]
+name = "PyRetroPlayer"
+readme = "README.md"
+requires-python = ">=3.12"
+version = "0.1.0"
+
+[project.urls]
+"Bug Tracker" = "https://github.com/knochenhans/PyRetroPlayer/issues"
+"Homepage" = "https://github.com/knochenhans/PyRetroPlayer"
+
+[tool.hatch.build]
+exclude = [
+  ".mypy_cache",
+  ".vscode",
+]
+
+# [tool.hatch.metadata.hooks.requirements_txt]
+# files = ["requirements.txt"]

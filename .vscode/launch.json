@@ -16,7 +16,7 @@
             "name": "Main Window",
             "type": "debugpy",
             "request": "launch",
-            "program": "main_window.py",
+            "program": "src/PyRetroPlayer/main_window.py",
             "console": "integratedTerminal"
         }
     ]
