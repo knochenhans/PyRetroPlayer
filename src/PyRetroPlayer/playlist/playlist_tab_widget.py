@@ -1,13 +1,12 @@
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMenu, QTabWidget, QToolButton
-
 # from player_backends.Song import Song
-from playlist.playlist import Playlist
-from playlist.playlist_manager import PlaylistManager
-from playlist.playlist_tab_bar import PlaylistTabBar
-from playlist.playlist_tab_bar_edit import PlaylistTabBarEdit
-from playlist.playlist_tree_view import PlaylistTreeView
+from playlist.playlist import Playlist  # type: ignore
+from playlist.playlist_manager import PlaylistManager  # type: ignore
+from playlist.playlist_tab_bar import PlaylistTabBar  # type: ignore
+from playlist.playlist_tab_bar_edit import PlaylistTabBarEdit  # type: ignore
+from playlist.playlist_tree_view import PlaylistTreeView  # type: ignore
+from PySide6.QtCore import QPoint, Qt, Signal, Slot  # type: ignore
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QMainWindow, QMenu, QTabWidget, QToolButton
 
 
 class PlaylistTabWidget(QTabWidget):
@@ -19,7 +18,7 @@ class PlaylistTabWidget(QTabWidget):
 
     def __init__(
         self,
-        parent,
+        parent: QMainWindow,
         playlist_manager: PlaylistManager,
         add_tab_button: bool = True,
     ) -> None:
@@ -54,7 +53,7 @@ class PlaylistTabWidget(QTabWidget):
         self.tabBar().tabMoved.connect(self.on_tab_moved)
 
     @Slot()
-    def on_tab_context_menu(self, position) -> None:
+    def on_tab_context_menu(self, position: QPoint) -> None:
         tab_index = self.tab_bar.tabAt(position)
         if tab_index != -1:
             menu = QMenu(self)
@@ -71,7 +70,7 @@ class PlaylistTabWidget(QTabWidget):
         return self.widget(self.currentIndex())  # type: ignore
 
     @Slot()
-    def doubleClicked(self, index) -> None:
+    def doubleClicked(self, index: int) -> None:
         tab_bar = self.tabBar()
         if isinstance(tab_bar, PlaylistTabBar):
             tab_bar.edit_index = index

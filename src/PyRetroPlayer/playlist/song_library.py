@@ -1,11 +1,11 @@
 import json
 import os
 import sqlite3
+from types import TracebackType
 from typing import List, Optional
 
 from loguru import logger
-
-from playlist.song import Song
+from playlist.song import Song  # type: ignore
 
 
 class SongLibrary:
@@ -118,5 +118,10 @@ class SongLibrary:
     def __enter__(self) -> "SongLibrary":
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         self.close()

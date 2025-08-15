@@ -1,7 +1,7 @@
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Dict, Optional
 
 
 @dataclass
@@ -21,7 +21,7 @@ class Song:
         duration: Optional[int] = None,
         md5: Optional[str] = None,
         sha1: Optional[str] = None,
-        custom_metadata: Optional[dict] = None,
+        custom_metadata: Optional[Dict[str, Any]] = None,
     ):
         self.id = id or str(uuid.uuid4())
         self.file_path = file_path
@@ -31,7 +31,7 @@ class Song:
         self.duration: Optional[int] = duration
         self.md5: Optional[str] = md5
         self.sha1: Optional[str] = sha1
-        self.custom_metadata: Optional[dict] = custom_metadata
+        self.custom_metadata: Optional[Dict[str, Any]] = custom_metadata
         self.is_ready: bool = False
 
     def to_json(self) -> str:

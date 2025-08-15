@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import QModelIndex, Qt, Signal
+from PySide6.QtCore import QModelIndex, Qt, Signal, QAbstractItemModel
 from PySide6.QtGui import (
     QAction,
     QBrush,
@@ -10,6 +10,8 @@ from PySide6.QtGui import (
     QIcon,
     QPalette,
     QStandardItem,
+    QKeyEvent,
+    QPainter,
 )
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -19,22 +21,29 @@ from PySide6.QtWidgets import (
     QTreeView,
     QWidget,
 )
+from loguru import logger
 
-from icons import Icons
-from playlist.column_manager import ColumnManager
-from playlist.playlist import Playlist
-from playlist.playlist_model import PlaylistModel
-from playlist.song_library import SongLibrary
-from settings.settings import Settings
+from icons import Icons  # type: ignore
+from playlist.column_manager import ColumnManager  # type: ignore
+from playlist.playlist import Playlist  # type: ignore
+from playlist.playlist_model import PlaylistModel  # type: ignore
+from playlist.song_library import SongLibrary  # type: ignore
+from settings.settings import Settings  # type: ignore
 
 # from tree_view_columns import tree_view_columns_dict
 
 
 class CustomItemViewStyle(QProxyStyle):
-    def __init__(self, style=None):
+    def __init__(self, style: Optional[QStyle] = None):
         super().__init__(style)
 
-    def drawPrimitive(self, element, option, painter, widget=None):
+    def drawPrimitive(
+        self,
+        element: QStyle.PrimitiveElement,
+        option: QStyleOption,
+        painter: QPainter,
+        widget: Optional[QWidget] = None,
+    ):
         if (
             element == QStyle.PrimitiveElement.PE_IndicatorItemViewItemDrop
             and not option.rect.isNull()  # type: ignore
@@ -118,7 +127,7 @@ class PlaylistTreeView(QTreeView):
         play_action.triggered.connect(self.play_selected_item)
         self.addAction(play_action)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key.Key_Delete:
             self.remove_selected_rows()
         else:
@@ -136,9 +145,11 @@ class PlaylistTreeView(QTreeView):
             print(f"Playing item at row {row}")
             self.set_currently_playing_row(row)
 
-    def setModel(self, model: PlaylistModel) -> None:
+    def setModel(self, model: Optional[QAbstractItemModel]) -> None:
         super().setModel(model)
-        self.playlist_model = model
+        # Only assign if model is a PlaylistModel
+        if isinstance(model, PlaylistModel):
+            self.playlist_model = model
 
     def on_item_double_clicked(self, index: QModelIndex) -> None:
         self.item_double_clicked.emit(index.row())
@@ -146,9 +157,9 @@ class PlaylistTreeView(QTreeView):
     def update_playlist_data(self) -> None:
         songs = self.playlist.get_song_metadata(self.song_library)
 
-        data = []
+        data: List[Dict[str, str]] = []
         for song in songs:
-            row_data = {}
+            row_data: Dict[str, str] = {}
             for column_def in self.default_columns_definitions:
                 col_id = column_def.get("id", "")
                 if col_id == "title":
@@ -159,15 +170,20 @@ class PlaylistTreeView(QTreeView):
                     row_data[col_id] = song.file_path
             data.append(row_data)
 
+            logger.debug(f"Adding row data: {row_data}")
+
         self.playlist_model.removeRows(0, self.playlist_model.rowCount())
         for row_data in data:
             self.add_row(row_data)
 
     def add_row(self, row_data: Dict[str, Any]) -> None:
-        tree_cols = []
+        tree_cols: List[QStandardItem] = []
         for column_def in self.default_columns_definitions:
             col_id = column_def.get("id", "")
             item = QStandardItem(row_data.get(col_id, ""))
+
+            logger.debug(f"Adding item: {col_id} with value: {item.text()}")
+
             tree_cols.append(item)
         self.playlist_model.appendRow(tree_cols)
 
@@ -230,7 +246,7 @@ class PlaylistTreeView(QTreeView):
         return None
 
     def get_column_widths(self) -> List[int]:
-        column_widths = []
+        column_widths: List[int] = []
         for i in range(self.playlist_model.columnCount()):
             column_widths.append(self.columnWidth(i))
         return column_widths
@@ -270,3 +286,5 @@ class PlaylistTreeView(QTreeView):
                 model.removeColumn(i)
             else:
                 i += 1
+
+            logger.debug(f"Removing invisible column: {column_id}")

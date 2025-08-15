@@ -1,14 +1,15 @@
-from typing import List
+from typing import List, Optional, Union
 
-from PySide6.QtCore import QModelIndex, Qt
+from PySide6.QtCore import QModelIndex, QPersistentModelIndex, Qt, QMimeData
 from PySide6.QtGui import QStandardItemModel
+from PySide6.QtWidgets import QWidget
 
 
 class PlaylistModel(QStandardItemModel):
-    def __init__(self, parent) -> None:
-        super().__init__(parent, 0)
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(0, 0, parent)
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+    def flags(self, index: Union[QModelIndex, QPersistentModelIndex]) -> Qt.ItemFlag:
         if not index.isValid():
             return Qt.ItemFlag.ItemIsDropEnabled
         else:
@@ -18,7 +19,14 @@ class PlaylistModel(QStandardItemModel):
                 | Qt.ItemFlag.ItemIsDragEnabled
             )
 
-    def dropMimeData(self, data, action, row, col, parent) -> bool:
+    def dropMimeData(
+        self,
+        data: QMimeData,
+        action: Qt.DropAction,
+        row: int,
+        column: int,
+        parent: Union[QModelIndex, QPersistentModelIndex],
+    ) -> bool:
         if action == Qt.DropAction.IgnoreAction:
             return False
 
