@@ -18,6 +18,14 @@
             "request": "launch",
             "program": "src/PyRetroPlayer/main_window.py",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Print Library",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/PyRetroPlayer/library_tools.py",
+            "console": "integratedTerminal",
+            "args": ["/home/andre/.local/share/PyRetroPlayer/song_library.db"]
         }
     ]
 }

@@ -1,11 +1,18 @@
 from typing import Callable
 
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMenu, QMenuBar, QVBoxLayout, QWidget, QProgressBar
+from PySide6.QtWidgets import (
+    QMenu,
+    QMenuBar,
+    QVBoxLayout,
+    QWidget,
+    QProgressBar,
+    QMainWindow,
+)
 
 
 class UIManager:
-    def __init__(self, main_window) -> None:
+    def __init__(self, main_window: QMainWindow) -> None:
         self.main_window = main_window
         self.progress_bar: QProgressBar
 
@@ -71,5 +78,13 @@ class UIManager:
         library_menu = menu_bar.addMenu("&Library")
 
         self.add_menu_action(
+            library_menu, "&Load All Songs", self.main_window.load_all_songs_from_library
+        )
+
+        self.add_menu_action(
             library_menu, "&Remove Missing Files", self.main_window.remove_missing_files
+        )
+
+        self.add_menu_action(
+            library_menu, "&Clear Song Library", self.main_window.clear_song_library
         )

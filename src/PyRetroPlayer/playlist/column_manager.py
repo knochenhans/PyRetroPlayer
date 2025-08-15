@@ -41,7 +41,7 @@ class ColumnManager:
         self.column_order = new_order
 
     def save_to_json(self, file_path: str) -> None:
-        data = {
+        data: Dict[str, Any] = {
             "columns": list(self.columns.values()),
             "order": self.column_order,
         }

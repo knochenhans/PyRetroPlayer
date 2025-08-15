@@ -111,7 +111,7 @@ class PlaylistTreeView(QTreeView):
         self.model().rowsMoved.connect(self.on_rows_moved)
 
         self.update_playlist_data()
-        self.remove_invisible_columns()
+        self.hide_invisible_columns()
         self.set_column_widths(self.column_manager.get_column_widths())
 
         self.add_context_menu_actions()
@@ -162,6 +162,10 @@ class PlaylistTreeView(QTreeView):
             row_data: Dict[str, str] = {}
             for column_def in self.default_columns_definitions:
                 col_id = column_def.get("id", "")
+
+                # if col_id == "playing":
+                #     continue
+
                 if col_id == "title":
                     row_data[col_id] = song.title
                 elif col_id == "artist":
@@ -180,6 +184,10 @@ class PlaylistTreeView(QTreeView):
         tree_cols: List[QStandardItem] = []
         for column_def in self.default_columns_definitions:
             col_id = column_def.get("id", "")
+
+            # if col_id == "playing":
+            #     continue
+
             item = QStandardItem(row_data.get(col_id, ""))
 
             logger.debug(f"Adding item: {col_id} with value: {item.text()}")
@@ -278,13 +286,12 @@ class PlaylistTreeView(QTreeView):
         ]
         self.rows_moved.emit(new_order)
 
-    def remove_invisible_columns(self) -> None:
-        model = self.model()
+    def hide_invisible_columns(self) -> None:
         i = 0
         for column_id in self.column_manager.columns:
             if not self.column_manager.is_column_visible(column_id):
-                model.removeColumn(i)
+                self.setColumnHidden(i, True)
             else:
                 i += 1
 
-            logger.debug(f"Removing invisible column: {column_id}")
+            logger.debug(f"Hiding invisible column: {column_id}")

@@ -28,6 +28,12 @@ class SongLibrary:
         """
         )
 
+        logger.info(f"Initialized SongLibrary with database at {db_path}")
+
+        # Print all existing songs in the library
+        all_songs = self.get_all_songs()
+        logger.debug(f"Existing songs in library: {[song.title for song in all_songs]}")
+
     def add_song(self, song: Song) -> None:
         self.conn.execute(
             """
@@ -108,6 +114,8 @@ class SongLibrary:
     def clear(self) -> None:
         self.conn.execute("DELETE FROM songs")
         self.conn.commit()
+
+        logger.debug("Cleared song library")
 
     def close(self) -> None:
         self.conn.close()

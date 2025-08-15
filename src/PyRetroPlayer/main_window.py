@@ -203,6 +203,21 @@ class MainWindow(QMainWindow):
     def remove_missing_files(self) -> None:
         self.song_library.remove_missing_files()
 
+    def clear_song_library(self) -> None:
+        self.song_library.clear()
+
+    def load_all_songs_from_library(self) -> None:
+        songs = self.song_library.get_all_songs()
+        for song in songs:
+            id = song.id
+
+            current_index = self.tab_widget.currentIndex()
+            if current_index != -1:
+                playlist = self.playlist_manager.playlists[current_index]
+                playlist.add_song(id)
+
+        self.update_playlist_view() 
+
     def load_files(self, file_paths: List[str], playlist: Playlist) -> None:
         file_fetcher = FileFetcher()
         file_list = file_fetcher.get_files_recursively_from_path_list(file_paths)
@@ -227,10 +242,10 @@ class MainWindow(QMainWindow):
 
         self.song_library.add_song(song)
 
-        current_index = self.tab_widget.currentIndex()
-        if current_index != -1:
-            playlist = self.playlist_manager.playlists[current_index]
-            playlist.add_song(song.id)
+        # current_index = self.tab_widget.currentIndex()
+        # if current_index != -1:
+        #     playlist = self.playlist_manager.playlists[current_index]
+        #     playlist.add_song(song.id)
 
         self.files_remaining -= 1
         self.progress_bar_value_changed.emit(self.total_files - self.files_remaining)
@@ -244,6 +259,9 @@ class MainWindow(QMainWindow):
             self.file_loader.all_songs_loaded_callback = None
             self.file_loader = None
 
+        self.update_playlist_view()
+
+    def update_playlist_view(self):
         playlist_tree_view = self.tab_widget.currentWidget()
         if isinstance(playlist_tree_view, PlaylistTreeView):
             playlist_tree_view.update_playlist_data()

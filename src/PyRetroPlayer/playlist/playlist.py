@@ -1,8 +1,8 @@
 import uuid
 from typing import List, Optional
 
-from playlist.song import Song
-from playlist.song_library import SongLibrary
+from playlist.song import Song  # type: ignore
+from playlist.song_library import SongLibrary  # type: ignore
 
 
 class Playlist:
