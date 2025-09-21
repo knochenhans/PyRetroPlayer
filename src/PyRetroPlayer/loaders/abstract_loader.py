@@ -36,12 +36,11 @@ class AbstractLoader:
             logger.debug(f"Trying player backend: {backend_name}")
 
             player_backend = backend_factory()
-            if player_backend is not None:
+            player_backend.song = song
+            if player_backend.check_module():
+                logger.debug(f"Module loaded with player backend: {backend_name}")
+                song.backend_name = backend_name
                 player_backend.song = song
-                if player_backend.check_module():
-                    logger.debug(f"Module loaded with player backend: {backend_name}")
-                    song.backend_name = backend_name
-                    player_backend.song = song
-                    player_backend.retrieve_song_info()
-                    return player_backend.song
+                player_backend.retrieve_song_info()
+                return player_backend.song
         return None

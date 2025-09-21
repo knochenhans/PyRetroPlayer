@@ -38,7 +38,9 @@ class FakeLoader(AbstractLoader):
         if file_path and song:
             song.file_path = file_path
             song.title = file_path.split("/")[-1]
+            song.artist = "Unknown Artist"
             song.backend_name = "FakeBackend"
+            song.duration = 180  # Fake duration of 3 minutes
             song.is_ready = True
 
         self.on_song_loaded(song)
