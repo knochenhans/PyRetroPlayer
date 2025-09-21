@@ -225,10 +225,10 @@ class MainWindow(QMainWindow):
 
         self.song_library.add_song(song)
 
-        # current_index = self.tab_widget.currentIndex()
-        # if current_index != -1:
-        #     playlist = self.playlist_manager.playlists[current_index]
-        #     playlist.add_song(song.id)
+        current_index = self.tab_widget.currentIndex()
+        if current_index != -1:
+            playlist = self.playlist_manager.playlists[current_index]
+            playlist.add_song(song.id)
 
         self.files_remaining -= 1
         self.progress_bar_value_changed.emit(self.total_files - self.files_remaining)
