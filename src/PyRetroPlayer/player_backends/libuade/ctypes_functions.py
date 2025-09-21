@@ -1,16 +1,16 @@
+import sys
 from ctypes import (
     CDLL,
     CFUNCTYPE,
-    RTLD_GLOBAL,
-    c_int16,
-    c_void_p,
-    c_size_t,
-    c_char_p,
-    c_ssize_t,
     POINTER,
+    RTLD_GLOBAL,
+    c_char_p,
+    c_int16,
+    c_size_t,
+    c_ssize_t,
     c_uint,
+    c_void_p,
 )
-import sys
 from ctypes.util import find_library
 
 from player_backends.libuade.ctypes_classes import *

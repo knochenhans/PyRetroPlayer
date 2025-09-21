@@ -1,11 +1,10 @@
 from typing import Optional
 
 import debugpy
+from audio_backends.audio_backend import AudioBackend  # type: ignore
 from loguru import logger
+from player_backends.player_backend import PlayerBackend  # type: ignore
 from PySide6.QtCore import QThread, Signal
-
-from audio_backends.audio_backend import AudioBackend
-from player_backends.player_backend import PlayerBackend
 
 
 class PlayerThread(QThread):

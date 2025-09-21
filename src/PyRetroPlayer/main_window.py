@@ -82,24 +82,6 @@ class MainWindow(QMainWindow):
         for playlist in self.playlist_manager.playlists:
             self.add_playlist(playlist, self.load_or_create_column_manager(playlist))
 
-        # Example songs
-        # example_songs = [
-        #     Song(title="song1.mp3", file_path="path/to/song1.mp3", artist="Artist 1"),
-        #     Song(title="song2.mp3", file_path="path/to/song2.mp3", artist="Artist 2"),
-        # ]
-        # for song in example_songs:
-        #     self.song_library.add_song(song)
-
-        # playlist = Playlist(
-        #     name="Example Playlist",
-        # )
-
-        # for song in self.song_library.get_all_songs():
-        #     playlist.add_song(song.id)
-
-        # column_manager = self.load_or_create_column_manager(playlist)
-        # self.add_playlist(playlist, column_manager)
-
         # Create a new playlist if none exist
         if not self.playlist_manager.playlists:
             self.create_new_playlist()
@@ -217,7 +199,7 @@ class MainWindow(QMainWindow):
                 playlist = self.playlist_manager.playlists[current_index]
                 playlist.add_song(id)
 
-        self.update_playlist_view() 
+        self.update_playlist_view()
 
     def load_files(self, file_paths: List[str], playlist: Playlist) -> None:
         file_fetcher = FileFetcher()

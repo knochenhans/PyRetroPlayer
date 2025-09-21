@@ -1,22 +1,20 @@
+from typing import Dict, Optional
+
 import darkdetect
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QStyle
-from typing import Dict, Optional
-from settings.settings import Settings
+from settings.settings import Settings  # type: ignore
 
 
 class Icons:
-    _instance = None
+    _instance: Optional["Icons"] = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             cls._instance = super(Icons, cls).__new__(cls)
         return cls._instance
 
-    def __init__(
-        self,
-        settings: Settings,
-        style: Optional[QStyle] = None    ):
+    def __init__(self, settings: Settings, style: Optional[QStyle] = None):
         if hasattr(self, "_initialized") and self._initialized:
             return
         self._initialized = True

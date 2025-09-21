@@ -2,9 +2,8 @@ from collections import deque
 from typing import List, Optional
 
 from loguru import logger
-
-from player_backends.Song import Song
-from playlist.playlist import Playlist
+from playlist.playlist import Playlist  # type: ignore
+from playlist.song import Song  # type: ignore
 
 
 class QueueManager:
@@ -36,13 +35,13 @@ class QueueManager:
             # Add song to history playlist
             self.history_playlist.add_song(song)
             self.history_playlist.current_song_index += 1
-            
+
             if len(self.queue) > 0:
                 logger.debug(
                     f'Playing "{song.title}" from queue, remaining: {len(self.queue)}'
                 )
             else:
-                logger.debug(f'Queue is empty.')
+                logger.debug("Queue is empty.")
             return song
         return None
 

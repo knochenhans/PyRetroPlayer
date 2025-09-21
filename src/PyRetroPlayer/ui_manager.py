@@ -1,13 +1,13 @@
 from typing import Callable
 
+from main_window import MainWindow  # type: ignore
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMenu,
     QMenuBar,
+    QProgressBar,
     QVBoxLayout,
     QWidget,
-    QProgressBar,
-    QMainWindow,
 )
 
 
@@ -72,13 +72,15 @@ class UIManager:
 
         file_menu.addSeparator()
 
-        self.add_menu_action(file_menu, "E&xit", self.main_window.close)
+        self.add_menu_action(file_menu, "E&xit", self.main_window.close)  # type: ignore
 
     def create_library_menu(self, menu_bar: QMenuBar) -> None:
         library_menu = menu_bar.addMenu("&Library")
 
         self.add_menu_action(
-            library_menu, "&Load All Songs", self.main_window.load_all_songs_from_library
+            library_menu,
+            "&Load All Songs",
+            self.main_window.load_all_songs_from_library,
         )
 
         self.add_menu_action(
