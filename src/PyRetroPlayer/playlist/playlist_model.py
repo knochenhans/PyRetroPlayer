@@ -1,23 +1,28 @@
-from typing import List, Optional, Union
+from typing import List
 
-from PySide6.QtCore import QMimeData, QModelIndex, QPersistentModelIndex, Qt
-from PySide6.QtGui import QStandardItemModel
-from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import (
+    QMimeData,
+    QModelIndex,
+    QPersistentModelIndex,
+    Qt,
+)
+from PySide6.QtGui import QStandardItem, QStandardItemModel
 
 
 class PlaylistModel(QStandardItemModel):
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
-        super().__init__(0, 0, parent)
+    def __init__(self, row_count: int, length: int = 0) -> None:
+        super().__init__(row_count, length)
 
-    def flags(self, index: Union[QModelIndex, QPersistentModelIndex]) -> Qt.ItemFlag:
+    def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
+        default_flags = super().flags(index)
         if not index.isValid():
-            return Qt.ItemFlag.ItemIsDropEnabled
-        else:
-            return (
-                Qt.ItemFlag.ItemIsEnabled
-                | Qt.ItemFlag.ItemIsSelectable
-                | Qt.ItemFlag.ItemIsDragEnabled
-            )
+            return Qt.ItemFlag.ItemIsDropEnabled | default_flags
+        return (
+            Qt.ItemFlag.ItemIsSelectable
+            | Qt.ItemFlag.ItemIsEnabled
+            | Qt.ItemFlag.ItemIsDragEnabled
+            | Qt.ItemFlag.ItemIsDropEnabled
+        )
 
     def dropMimeData(
         self,
@@ -25,26 +30,43 @@ class PlaylistModel(QStandardItemModel):
         action: Qt.DropAction,
         row: int,
         column: int,
-        parent: Union[QModelIndex, QPersistentModelIndex],
+        parent: QModelIndex | QPersistentModelIndex,
     ) -> bool:
-        if action == Qt.DropAction.IgnoreAction:
+        # Only allow drops at the top level (no parent)
+        if parent.isValid():
             return False
+        return super().dropMimeData(data, action, row, 0, parent)
 
-        if action == Qt.DropAction.MoveAction:
-            if action == Qt.DropAction.IgnoreAction:
-                return False
+    #     if action == Qt.DropAction.IgnoreAction:
+    #         return False
+    #     if not data.hasFormat("application/x-qstandarditemmodeldatalist"):
+    #         return False
 
-        if action == Qt.DropAction.MoveAction:
-            # Prevent shifting columns
-            return super().dropMimeData(data, Qt.DropAction.CopyAction, row, 0, parent)
+    #     if row == -1:
+    #         row = self.rowCount()
 
-        return False
+    #     # Decode into a temp model
+    #     temp_model = QStandardItemModel()
+    #     temp_model.dropMimeData(data, Qt.DropAction.CopyAction, 0, 0, QModelIndex())
 
-    def supportedDragActions(self) -> Qt.DropAction:
-        return Qt.DropAction.MoveAction
+    #     # Collect rows
+    #     copied_rows: List[List[QStandardItem]] = []
+    #     for r in range(temp_model.rowCount()):
+    #         items: List[QStandardItem] = []
+    #         for c in range(temp_model.columnCount()):
+    #             src_item = temp_model.item(r, c)
+    #             if src_item:
+    #                 item = src_item.clone()  # important: clone to avoid shared pointers
+    #             else:
+    #                 item = QStandardItem()
+    #             items.append(item)
+    #         copied_rows.append(items)
 
-    def supportedDropActions(self) -> Qt.DropAction:
-        return Qt.DropAction.MoveAction
+    #     # Insert at target
+    #     for i, items in enumerate(copied_rows):
+    #         self.insertRow(row + i, items)
+
+    #     return True
 
     def mimeTypes(self) -> List[str]:
         return ["application/x-qstandarditemmodeldatalist"]

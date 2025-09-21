@@ -6,12 +6,15 @@ from playlist.column_manager import ColumnManager  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
 from playlist.playlist_model import PlaylistModel  # type: ignore
 from playlist.song_library import SongLibrary  # type: ignore
-from PySide6.QtCore import QAbstractItemModel, QModelIndex, Qt, Signal
+from PySide6.QtCore import (
+    QAbstractItemModel,
+    QModelIndex,
+    Qt,
+    Signal,
+)
 from PySide6.QtGui import (
     QAction,
     QBrush,
-    QDragEnterEvent,
-    QDragMoveEvent,
     QDropEvent,
     QIcon,
     QKeyEvent,
@@ -86,8 +89,10 @@ class PlaylistTreeView(QTreeView):
         # Enable drag-and-drop reordering
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
-        self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.setSelectionBehavior(QTreeView.SelectionBehavior.SelectRows)
+        self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
+        self.setDefaultDropAction(Qt.DropAction.MoveAction)
+        self.setDragDropOverwriteMode(False)
         self.setEditTriggers(QTreeView.EditTrigger.NoEditTriggers)
 
         # Apply custom style for the drop indicator
@@ -102,13 +107,13 @@ class PlaylistTreeView(QTreeView):
         self.doubleClicked.connect(self.on_item_double_clicked)
 
         # Initialize the model and set the playlist data
-        model = PlaylistModel(self)
+        model = PlaylistModel(0, len(self.default_columns_definitions))
         model.set_column_names(self.column_manager.get_column_names())
         self.setModel(model)
         self.model().rowsMoved.connect(self.on_rows_moved)
 
         self.update_playlist_data()
-        self.hide_invisible_columns()
+        # self.hide_invisible_columns()
         self.set_column_widths(self.column_manager.get_column_widths())
 
         self.add_context_menu_actions()
@@ -163,12 +168,21 @@ class PlaylistTreeView(QTreeView):
                 # if col_id == "playing":
                 #     continue
 
-                if col_id == "title":
-                    row_data[col_id] = song.title
-                elif col_id == "artist":
-                    row_data[col_id] = song.artist
-                elif col_id == "file_path":
-                    row_data[col_id] = song.file_path
+                match col_id:
+                    case "title":
+                        row_data[col_id] = song.title
+                    case "artist":
+                        row_data[col_id] = song.artist
+                    case "file_path":
+                        row_data[col_id] = song.file_path
+                    case "duration":
+                        row_data[col_id] = str(song.duration)
+                    case "backend_name":
+                        row_data[col_id] = song.backend_name or ""
+                    case _:
+                        custom_metadata = song.custom_metadata or {}
+                        row_data[col_id] = custom_metadata.get(col_id, "")
+
             data.append(row_data)
 
             logger.debug(f"Adding row data: {row_data}")
@@ -200,15 +214,15 @@ class PlaylistTreeView(QTreeView):
     def get_selected_rows(self) -> List[int]:
         return sorted(set(index.row() for index in self.selectedIndexes()))
 
-    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()
-        super().dragEnterEvent(event)
+    # def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+    #     if event.mimeData().hasUrls():
+    #         event.acceptProposedAction()
+    #     super().dragEnterEvent(event)
 
-    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()
-        super().dragMoveEvent(event)
+    # def dragMoveEvent(self, event: QDragMoveEvent) -> None:
+    #     if event.mimeData().hasUrls():
+    #         event.acceptProposedAction()
+    #     super().dragMoveEvent(event)
 
     def dropEvent(self, event: QDropEvent) -> None:
         if event.mimeData().hasUrls():
@@ -283,12 +297,8 @@ class PlaylistTreeView(QTreeView):
         ]
         self.rows_moved.emit(new_order)
 
-    def hide_invisible_columns(self) -> None:
-        i = 0
-        for column_id in self.column_manager.columns:
-            if not self.column_manager.is_column_visible(column_id):
-                self.setColumnHidden(i, True)
-            else:
-                i += 1
-
-            logger.debug(f"Hiding invisible column: {column_id}")
+    # def hide_invisible_columns(self) -> None:
+    #     for i, column_id in enumerate(self.column_manager.columns):
+    #         hidden = not self.column_manager.is_column_visible(column_id)
+    #         self.setColumnHidden(i, hidden)
+    #         logger.debug(f"{'Hiding' if hidden else 'Showing'} column: {column_id}")
