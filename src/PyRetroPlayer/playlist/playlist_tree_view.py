@@ -1,6 +1,12 @@
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import QModelIndex, Qt, Signal, QAbstractItemModel
+from icons import Icons  # type: ignore
+from loguru import logger
+from playlist.column_manager import ColumnManager  # type: ignore
+from playlist.playlist import Playlist  # type: ignore
+from playlist.playlist_model import PlaylistModel  # type: ignore
+from playlist.song_library import SongLibrary  # type: ignore
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, Qt, Signal
 from PySide6.QtGui import (
     QAction,
     QBrush,
@@ -8,10 +14,10 @@ from PySide6.QtGui import (
     QDragMoveEvent,
     QDropEvent,
     QIcon,
-    QPalette,
-    QStandardItem,
     QKeyEvent,
     QPainter,
+    QPalette,
+    QStandardItem,
 )
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -21,16 +27,7 @@ from PySide6.QtWidgets import (
     QTreeView,
     QWidget,
 )
-from loguru import logger
-
-from icons import Icons  # type: ignore
-from playlist.column_manager import ColumnManager  # type: ignore
-from playlist.playlist import Playlist  # type: ignore
-from playlist.playlist_model import PlaylistModel  # type: ignore
-from playlist.song_library import SongLibrary  # type: ignore
 from settings.settings import Settings  # type: ignore
-
-# from tree_view_columns import tree_view_columns_dict
 
 
 class CustomItemViewStyle(QProxyStyle):

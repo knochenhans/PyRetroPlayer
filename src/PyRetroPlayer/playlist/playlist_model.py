@@ -1,6 +1,6 @@
 from typing import List, Optional, Union
 
-from PySide6.QtCore import QModelIndex, QPersistentModelIndex, Qt, QMimeData
+from PySide6.QtCore import QMimeData, QModelIndex, QPersistentModelIndex, Qt
 from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import QWidget
 

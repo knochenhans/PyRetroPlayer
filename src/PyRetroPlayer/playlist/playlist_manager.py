@@ -4,7 +4,6 @@ from typing import List, Optional
 
 from appdirs import user_data_dir
 from loguru import logger
-
 from playlist.playlist import Playlist
 
 
