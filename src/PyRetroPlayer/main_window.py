@@ -25,7 +25,6 @@ from playlist.playlist_tree_view import PlaylistTreeView  # type: ignore
 from playlist.song import Song  # type: ignore
 from playlist.song_library import SongLibrary  # type: ignore
 from settings.settings import Settings  # type: ignore
-from ui_manager import UIManager  # type: ignore
 
 
 class MainWindow(QMainWindow):
@@ -38,6 +37,8 @@ class MainWindow(QMainWindow):
         self.application_version: str = "0.1.0"
 
         self.setWindowTitle(f"{self.application_name} v{self.application_version}")
+
+        from ui_manager import UIManager  # type: ignore
 
         self.ui_manager = UIManager(self)
 

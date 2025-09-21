@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 
 
 class UIManager:
-    def __init__(self, main_window: QMainWindow) -> None:
+    def __init__(self, main_window: MainWindow) -> None:
         self.main_window = main_window
         self.progress_bar: QProgressBar
 
