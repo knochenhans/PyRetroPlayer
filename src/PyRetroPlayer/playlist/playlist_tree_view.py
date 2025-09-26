@@ -114,7 +114,7 @@ class PlaylistTreeView(QTreeView):
         self.source_model.set_column_names(column_names)
 
         filtered_cols = self.column_manager.get_visible_column_indices()
-        # filtered_cols = [2, 3]
+
         col_proxy = ColumnFilterProxy(set(filtered_cols))
         col_proxy.setSourceModel(self.source_model)
 
@@ -125,7 +125,6 @@ class PlaylistTreeView(QTreeView):
         self.setModel(reorder_proxy)
 
         self.update_playlist_data()
-        # self.hide_invisible_columns()
         self.set_column_widths(self.column_manager.get_column_widths())
 
         self.add_context_menu_actions()
@@ -169,7 +168,7 @@ class PlaylistTreeView(QTreeView):
         self.item_double_clicked.emit(index.row())
 
     def update_playlist_data(self) -> None:
-        songs = self.playlist.get_song_metadata(self.song_library)
+        songs = self.playlist.get_songs_metadata(self.song_library)
 
         data: List[Dict[str, str]] = []
         for song in songs:

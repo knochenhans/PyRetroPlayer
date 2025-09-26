@@ -1,15 +1,15 @@
 import os
 from typing import List
 
-from appdirs import user_data_dir
+from appdirs import user_data_dir  # type: ignore
 from loguru import logger
-from playlist.playlist import Playlist
+from playlist.playlist import Playlist  # type: ignore
 
 
 class PlaylistManager:
     def __init__(self, app_name: str) -> None:
         self.app_name = app_name
-        self.playlists_path = os.path.join(user_data_dir(self.app_name), "playlist")
+        self.playlists_path = os.path.join(user_data_dir(self.app_name), "playlist")  # type: ignore
         os.makedirs(self.playlists_path, exist_ok=True)
         self.playlists: List[Playlist] = []
 

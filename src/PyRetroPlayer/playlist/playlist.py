@@ -1,6 +1,8 @@
+import json
 import uuid
 from typing import List, Optional
 
+from loguru import logger
 from playlist.song import Song  # type: ignore
 from playlist.song_library import SongLibrary  # type: ignore
 
@@ -26,6 +28,18 @@ class Playlist:
 
     def get_songs(self) -> List[str]:
         return self.song_ids
+
+    def get_songs_metadata(self, song_library: SongLibrary) -> List[Song]:
+        songs: List[Song] = []
+        for song_id in self.song_ids:
+            song = song_library.get_song(song_id)
+            if song is not None:
+                logger.info(f"Found song: {song_id}")
+                songs.append(song)
+            else:
+                logger.warning(f"Song not found: {song_id}, removing from playlist")
+                self.remove_song(song_id)
+        return songs
 
     @staticmethod
     def load_playlist(file_path: str) -> Optional["Playlist"]:
