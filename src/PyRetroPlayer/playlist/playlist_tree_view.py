@@ -120,10 +120,9 @@ class PlaylistTreeView(QTreeView):
 
         reorder_proxy = DragDropReorderProxy()
         reorder_proxy.setSourceModel(col_proxy)
+        reorder_proxy.rowsReordered.connect(playlist.set_song_order)
 
         self.setModel(reorder_proxy)
-
-        self.model().rowsMoved.connect(self.on_rows_moved)
 
         self.update_playlist_data()
         # self.hide_invisible_columns()
@@ -325,20 +324,6 @@ class PlaylistTreeView(QTreeView):
         except IOError as e:
             logger.error(f"Failed to save playlist to {file_path}: {e}")
 
-    # def on_rows_moved(
-    #     self,
-    #     parent: QModelIndex,
-    #     start: int,
-    #     end: int,
-    #     destination: QModelIndex,
-    #     row: int,
-    # ) -> None:
-
-        # Emit the new order of rows
-        new_order = [
-            self.model().index(i, 0).row() for i in range(self.model().rowCount())
-        ]
-        self.rows_moved.emit(new_order)
 
     # def hide_invisible_columns(self) -> None:
     #     for i, column_id in enumerate(self.column_manager.columns):

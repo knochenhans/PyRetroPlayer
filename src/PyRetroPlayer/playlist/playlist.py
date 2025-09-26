@@ -58,3 +58,13 @@ class Playlist:
             logger.info(f"Playlist saved to {file_path}")
         except IOError as e:
             logger.error(f"Failed to save playlist to {file_path}: {e}")
+
+    def set_song_order(self, order: List[int]) -> None:
+        if len(order) != len(self.song_ids):
+            logger.error("Order length does not match number of songs in playlist.")
+            return
+        try:
+            self.song_ids = [self.song_ids[i] for i in order]
+            logger.info(f"Playlist order updated: {self.song_ids}")
+        except IndexError as e:
+            logger.error(f"Invalid index in order list: {e}")

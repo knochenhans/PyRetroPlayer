@@ -7,11 +7,14 @@ from PySide6.QtCore import (
     QModelIndex,
     QPersistentModelIndex,
     Qt,
+    Signal,
 )
 from PySide6.QtWidgets import QWidget
 
 
 class DragDropReorderProxy(QAbstractProxyModel):
+    rowsReordered = Signal(list)
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._row_order: list[int] = []
@@ -141,6 +144,7 @@ class DragDropReorderProxy(QAbstractProxyModel):
             self._row_order.insert(row + i, val)
 
         self.endResetModel()
+        self.rowsReordered.emit(list(self._row_order))
 
         # clear selection memory
         self._current_drag_rows = []
