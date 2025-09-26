@@ -1,12 +1,12 @@
 from typing import List, Optional, Sequence
 
 from PySide6.QtCore import (
+    QAbstractItemModel,
     QAbstractProxyModel,
+    QMimeData,
     QModelIndex,
     QPersistentModelIndex,
     Qt,
-    QAbstractItemModel,
-    QMimeData,
 )
 from PySide6.QtWidgets import QWidget
 
@@ -15,6 +15,7 @@ class DragDropReorderProxy(QAbstractProxyModel):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._row_order: list[int] = []
+        self._current_drag_rows: List[int] = []
 
     def setSourceModel(self, sourceModel: QAbstractItemModel) -> None:
         super().setSourceModel(sourceModel)
@@ -111,21 +112,48 @@ class DragDropReorderProxy(QAbstractProxyModel):
         elif row == -1:
             row = self.rowCount()
 
-        if not hasattr(self, "_current_drag_row"):
+        # nothing to move
+        if not getattr(self, "_current_drag_rows", None):
             return False
 
+        # clamp row
+        row = max(0, min(row, self.rowCount()))
+
         self.beginResetModel()
-        sel = self._row_order.pop(self._current_drag_row)
-        self._row_order.insert(min(row, len(self._row_order)), sel)
+
+        # drag_rows in ascending order (proxy indices)
+        drag_rows = sorted(self._current_drag_rows)
+
+        # capture the values (source row ids) in original order
+        moved = [self._row_order[r] for r in drag_rows]
+
+        # remove from _row_order by popping descending indices to avoid shifts
+        for r in sorted(drag_rows, reverse=True):
+            self._row_order.pop(r)
+
+        # if any removed rows were before the drop index, shift the drop index left
+        num_before = sum(1 for r in drag_rows if r < row)
+        row -= num_before
+        row = max(0, min(row, len(self._row_order)))  # clamp again after adjustment
+
+        # insert moved values preserving their original order
+        for i, val in enumerate(moved):
+            self._row_order.insert(row + i, val)
+
         self.endResetModel()
 
+        # clear selection memory
+        self._current_drag_rows = []
         return True
 
-    def mimeTypes(self) -> List[str]:
-        return ["application/x-qabstractitemmodeldatalist"]
+    # def mimeTypes(self) -> List[str]:
+    #     return ["application/x-qabstractitemmodeldatalist"]
 
     def mimeData(self, indexes: Sequence[QModelIndex]) -> QMimeData:
-        # Track the dragged row
+        # Collect unique rows from selection (ascending order)
         if indexes:
-            self._current_drag_row = indexes[0].row()
+            rows = sorted(set(idx.row() for idx in indexes))
+            self._current_drag_rows = rows
+        else:
+            self._current_drag_rows = []
         return super().mimeData(indexes)
