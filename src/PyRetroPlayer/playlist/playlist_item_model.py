@@ -6,36 +6,37 @@ from PySide6.QtCore import (
     QPersistentModelIndex,
     Qt,
 )
-from PySide6.QtGui import QStandardItem, QStandardItemModel
+from PySide6.QtGui import QStandardItemModel
 
 
-class PlaylistModel(QStandardItemModel):
-    def __init__(self, row_count: int, length: int = 0) -> None:
-        super().__init__(row_count, length)
+class PlaylistItemModel(QStandardItemModel):
+    pass
+    # def __init__(self, row_count: int, length: int = 0) -> None:
+    #     super().__init__(row_count, length)
 
-    def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
-        default_flags = super().flags(index)
-        if not index.isValid():
-            return Qt.ItemFlag.ItemIsDropEnabled | default_flags
-        return (
-            Qt.ItemFlag.ItemIsSelectable
-            | Qt.ItemFlag.ItemIsEnabled
-            | Qt.ItemFlag.ItemIsDragEnabled
-            | Qt.ItemFlag.ItemIsDropEnabled
-        )
+    # def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
+    #     default_flags = super().flags(index)
+    #     if not index.isValid():
+    #         return Qt.ItemFlag.ItemIsDropEnabled | default_flags
+    #     return (
+    #         Qt.ItemFlag.ItemIsSelectable
+    #         | Qt.ItemFlag.ItemIsEnabled
+    #         | Qt.ItemFlag.ItemIsDragEnabled
+    #         | Qt.ItemFlag.ItemIsDropEnabled
+    #     )
 
-    def dropMimeData(
-        self,
-        data: QMimeData,
-        action: Qt.DropAction,
-        row: int,
-        column: int,
-        parent: QModelIndex | QPersistentModelIndex,
-    ) -> bool:
-        # Only allow drops at the top level (no parent)
-        if parent.isValid():
-            return False
-        return super().dropMimeData(data, action, row, 0, parent)
+    # def dropMimeData(
+    #     self,
+    #     data: QMimeData,
+    #     action: Qt.DropAction,
+    #     row: int,
+    #     column: int,
+    #     parent: QModelIndex | QPersistentModelIndex,
+    # ) -> bool:
+    #     # Only allow drops at the top level (no parent)
+    #     if parent.isValid():
+    #         return False
+    #     return super().dropMimeData(data, action, row, 0, parent)
 
     #     if action == Qt.DropAction.IgnoreAction:
     #         return False
@@ -68,8 +69,8 @@ class PlaylistModel(QStandardItemModel):
 
     #     return True
 
-    def mimeTypes(self) -> List[str]:
-        return ["application/x-qstandarditemmodeldatalist"]
+    # def mimeTypes(self) -> List[str]:
+    #     return ["application/x-qstandarditemmodeldatalist"]
 
     def set_column_names(self, column_names: List[str]) -> None:
         self.setHorizontalHeaderLabels(column_names)

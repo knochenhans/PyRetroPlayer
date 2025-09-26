@@ -40,6 +40,20 @@ class ColumnManager:
             raise ValueError("New order must include all column IDs.")
         self.column_order = new_order
 
+    def get_hidden_column_indices(self) -> List[int]:
+        return [
+            i
+            for i, col_id in enumerate(self.column_order)
+            if not self.is_column_visible(col_id)
+        ]
+
+    def get_visible_column_indices(self) -> List[int]:
+        return [
+            i
+            for i, col_id in enumerate(self.column_order)
+            if self.is_column_visible(col_id)
+        ]
+
     def save_to_json(self, file_path: str) -> None:
         data: Dict[str, Any] = {
             "columns": list(self.columns.values()),

@@ -2,12 +2,13 @@ from typing import Any, Dict, List, Optional
 
 from icons import Icons  # type: ignore
 from loguru import logger
+from playlist.column_filter_proxy import ColumnFilterProxy  # type: ignore
 from playlist.column_manager import ColumnManager  # type: ignore
+from playlist.drag_drop_reorder_proxy import DragDropReorderProxy  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
-from playlist.playlist_model import PlaylistModel  # type: ignore
+from playlist.playlist_item_model import PlaylistItemModel  # type: ignore
 from playlist.song_library import SongLibrary  # type: ignore
 from PySide6.QtCore import (
-    QAbstractItemModel,
     QModelIndex,
     Qt,
     Signal,
@@ -86,13 +87,10 @@ class PlaylistTreeView(QTreeView):
         self.default_columns_definitions = default_columns_definitions
         self.song_library = song_library
 
-        # Enable drag-and-drop reordering
-        self.setDragEnabled(True)
-        self.setAcceptDrops(True)
         self.setSelectionBehavior(QTreeView.SelectionBehavior.SelectRows)
         self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
-        self.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.setDragDropOverwriteMode(False)
+        # self.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.setEditTriggers(QTreeView.EditTrigger.NoEditTriggers)
 
         # Apply custom style for the drop indicator
@@ -106,10 +104,24 @@ class PlaylistTreeView(QTreeView):
 
         self.doubleClicked.connect(self.on_item_double_clicked)
 
-        # Initialize the model and set the playlist data
-        model = PlaylistModel(0, len(self.default_columns_definitions))
-        model.set_column_names(self.column_manager.get_column_names())
-        self.setModel(model)
+        self.source_model = PlaylistItemModel(0, len(self.default_columns_definitions))
+
+        column_names = [
+            col_def.get("name", "") for col_def in self.default_columns_definitions
+        ]
+
+        self.source_model.set_column_names(column_names)
+
+        filtered_cols = self.column_manager.get_visible_column_indices()
+        # filtered_cols = [2, 3]
+        col_proxy = ColumnFilterProxy(set(filtered_cols))
+        col_proxy.setSourceModel(self.source_model)
+
+        reorder_proxy = DragDropReorderProxy()
+        reorder_proxy.setSourceModel(col_proxy)
+
+        self.setModel(reorder_proxy)
+
         self.model().rowsMoved.connect(self.on_rows_moved)
 
         self.update_playlist_data()
@@ -147,11 +159,11 @@ class PlaylistTreeView(QTreeView):
             print(f"Playing item at row {row}")
             self.set_currently_playing_row(row)
 
-    def setModel(self, model: Optional[QAbstractItemModel]) -> None:
-        super().setModel(model)
-        # Only assign if model is a PlaylistModel
-        if isinstance(model, PlaylistModel):
-            self.playlist_model = model
+    # def setModel(self, model: Optional[QAbstractItemModel]) -> None:
+    #     super().setModel(model)
+    #     # Only assign if model is a ColumnFilterProxy
+    #     if isinstance(model, ColumnFilterProxy):
+    #         self.playlist_model = model
 
     def on_item_double_clicked(self, index: QModelIndex) -> None:
         self.item_double_clicked.emit(index.row())
@@ -187,7 +199,7 @@ class PlaylistTreeView(QTreeView):
 
             logger.debug(f"Adding row data: {row_data}")
 
-        self.playlist_model.removeRows(0, self.playlist_model.rowCount())
+        self.model().removeRows(0, self.model().rowCount())
         for row_data in data:
             self.add_row(row_data)
 
@@ -204,10 +216,10 @@ class PlaylistTreeView(QTreeView):
             logger.debug(f"Adding item: {col_id} with value: {item.text()}")
 
             tree_cols.append(item)
-        self.playlist_model.appendRow(tree_cols)
+        self.source_model.appendRow(tree_cols)
 
     def remove_row(self, row: int) -> None:
-        self.playlist_model.removeRow(row)
+        self.source_model.removeRow(row)
         song_id = self.playlist.get_songs()[row]
         self.playlist.remove_song(song_id)
 
@@ -233,7 +245,7 @@ class PlaylistTreeView(QTreeView):
         super().dropEvent(event)
 
     def _set_play_status(self, row: int, enable: bool) -> None:
-        column = self.playlist_model.itemFromIndex(self.model().index(row, 0))
+        column = self.source_model.itemFromIndex(self.model().index(row, 0))
 
         if column:
             color = column.foreground().color()
@@ -261,12 +273,12 @@ class PlaylistTreeView(QTreeView):
     def get_current_item(self) -> Optional[QStandardItem]:
         index = self.currentIndex()
         if index.isValid():
-            return self.playlist_model.itemFromIndex(index)
+            return self.source_model.itemFromIndex(index)
         return None
 
     def get_column_widths(self) -> List[int]:
         column_widths: List[int] = []
-        for i in range(self.playlist_model.columnCount()):
+        for i in range(self.model().columnCount()):
             column_widths.append(self.columnWidth(i))
         return column_widths
 
