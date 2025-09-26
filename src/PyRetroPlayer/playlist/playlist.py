@@ -27,9 +27,34 @@ class Playlist:
     def get_songs(self) -> List[str]:
         return self.song_ids
 
-    def get_song_metadata(self, song_library: SongLibrary) -> List[Song]:
-        return [
-            song
-            for song in (song_library.get_song(song_id) for song_id in self.song_ids)
-            if song is not None
-        ]
+    @staticmethod
+    def load_playlist(file_path: str) -> Optional["Playlist"]:
+        try:
+            with open(file_path, "r") as f:
+                playlist_data = json.load(f)
+                logger.info(f"Loaded playlist: {playlist_data['name']}")
+                return Playlist(
+                    id=playlist_data["id"],
+                    name=playlist_data["name"],
+                    song_ids=playlist_data["song_ids"],
+                )
+        except (json.JSONDecodeError, KeyError, FileNotFoundError) as e:
+            logger.error(f"Failed to load playlist from {file_path}: {e}")
+            return None
+
+    @staticmethod
+    def save_playlist(playlist: "Playlist", file_path: str) -> None:
+        try:
+            with open(file_path, "w") as f:
+                json.dump(
+                    {
+                        "id": playlist.id,
+                        "name": playlist.name,
+                        "song_ids": playlist.get_songs(),
+                    },
+                    f,
+                    indent=4,
+                )
+            logger.info(f"Playlist saved to {file_path}")
+        except IOError as e:
+            logger.error(f"Failed to save playlist to {file_path}: {e}")

@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional
+import json
 
 from icons import Icons  # type: ignore
 from loguru import logger
@@ -294,14 +295,44 @@ class PlaylistTreeView(QTreeView):
                 self.column_manager.set_column_width(column_id, current_width)
                 column_index += 1
 
-    def on_rows_moved(
-        self,
-        parent: QModelIndex,
-        start: int,
-        end: int,
-        destination: QModelIndex,
-        row: int,
-    ) -> None:
+    def load_playlist(self, file_path: str) -> Optional[Playlist]:
+        try:
+            with open(file_path, "r") as f:
+                playlist_data = json.load(f)
+                logger.info(f"Loaded playlist: {playlist_data['name']}")
+                return Playlist(
+                    id=playlist_data["id"],
+                    name=playlist_data["name"],
+                    song_ids=playlist_data["song_ids"],
+                )
+        except (json.JSONDecodeError, KeyError, FileNotFoundError) as e:
+            logger.error(f"Failed to load playlist from {file_path}: {e}")
+            return None
+
+    def save_playlist(self, playlist: Playlist, file_path: str) -> None:
+        try:
+            with open(file_path, "w") as f:
+                json.dump(
+                    {
+                        "id": playlist.id,
+                        "name": playlist.name,
+                        "song_ids": playlist.get_songs(),
+                    },
+                    f,
+                    indent=4,
+                )
+            logger.info(f"Playlist saved to {file_path}")
+        except IOError as e:
+            logger.error(f"Failed to save playlist to {file_path}: {e}")
+
+    # def on_rows_moved(
+    #     self,
+    #     parent: QModelIndex,
+    #     start: int,
+    #     end: int,
+    #     destination: QModelIndex,
+    #     row: int,
+    # ) -> None:
 
         # Emit the new order of rows
         new_order = [

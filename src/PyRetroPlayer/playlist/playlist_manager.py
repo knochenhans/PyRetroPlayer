@@ -1,6 +1,5 @@
-import json
 import os
-from typing import List, Optional
+from typing import List
 
 from appdirs import user_data_dir
 from loguru import logger
@@ -31,10 +30,9 @@ class PlaylistManager:
         for filename in sorted(os.listdir(self.playlists_path)):
             if filename.endswith(".json"):
                 playlist_file_path = os.path.join(self.playlists_path, filename)
-                playlist = self.load_playlist(playlist_file_path)
+                playlist = Playlist.load_playlist(playlist_file_path)
                 if playlist:
                     self.playlists.append(playlist)
-                    logger.info(f"Loaded playlist: {playlist.name}")
 
     def save_playlists(self) -> None:
         # Remove existing files in the playlists directory
@@ -46,36 +44,7 @@ class PlaylistManager:
         # Save current playlists
         for i, playlist in enumerate(self.playlists):
             playlist_file_path = os.path.join(self.playlists_path, f"{i}.json")
-            self.save_playlist(playlist, playlist_file_path)
-
-    def load_playlist(self, file_path: str) -> Optional[Playlist]:
-        try:
-            with open(file_path, "r") as f:
-                playlist_data = json.load(f)
-                return Playlist(
-                    id=playlist_data["id"],
-                    name=playlist_data["name"],
-                    song_ids=playlist_data["song_ids"],
-                )
-        except (json.JSONDecodeError, KeyError, FileNotFoundError) as e:
-            logger.error(f"Failed to load playlist from {file_path}: {e}")
-            return None
-
-    def save_playlist(self, playlist: Playlist, file_path: str) -> None:
-        try:
-            with open(file_path, "w") as f:
-                json.dump(
-                    {
-                        "id": playlist.id,
-                        "name": playlist.name,
-                        "song_ids": playlist.get_songs(),
-                    },
-                    f,
-                    indent=4,
-                )
-            logger.info(f"Playlist saved to {file_path}")
-        except IOError as e:
-            logger.error(f"Failed to save playlist to {file_path}: {e}")
+            Playlist.save_playlist(playlist, playlist_file_path)
 
     def reorder_playlists(self, from_index: int, to_index: int) -> None:
         if 0 <= from_index < len(self.playlists) and 0 <= to_index < len(
