@@ -1,16 +1,22 @@
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, List, Optional
 
 from loguru import logger
-
-from player_backends.player_backend import PlayerBackend
-from playlist.song import Song
+from player_backends.player_backend import PlayerBackend  # type: ignore
+from playlist.song import Song  # type: ignore
 
 
 class AbstractLoader:
+    priority: int = 0
+
     def __init__(self, player_backends: Dict[str, Callable[[], PlayerBackend]]) -> None:
         self.player_backends = player_backends
         self.song_loaded_callback: Optional[Callable[[Optional[Song]], None]] = None
         self.all_songs_loaded_callback: Optional[Callable[[], None]] = None
+
+    def set_file_list(self, file_list: List[str]) -> None:
+        self.file_list = file_list
+        self.songs_to_load = len(file_list)
+        self.songs_loaded = 0
 
     def set_song_loaded_callback(
         self, callback: Callable[[Optional[Song]], None]
@@ -19,6 +25,24 @@ class AbstractLoader:
 
     def set_all_songs_loaded_callback(self, callback: Callable[[], None]) -> None:
         self.all_songs_loaded_callback = callback
+
+    def try_loading_song(self, file_path: str) -> bool:
+        # Check if file exists and is readable
+        try:
+            with open(file_path, "rb"):
+                pass
+        except (FileNotFoundError, IOError) as e:
+            logger.error(f"File not found or unreadable: {file_path}, error: {e}")
+            return False
+        return True
+    
+    def start_loading(self) -> None:
+        if not self.file_list:
+            logger.warning("No files to load.")
+            return
+
+        logger.info("Starting to load files...")
+        self.load_songs()
 
     def load_song(self, file_path: str) -> Optional[Song]:
         return None

@@ -1,20 +1,19 @@
 import threading
 import time
-from typing import List, Optional
-
-from loguru import logger
+from typing import Callable, Dict, Optional
 
 from loaders.abstract_loader import AbstractLoader  # type: ignore
-from player_backends.fake_player_backend import FakePlayerBackend  # type: ignore
+from loguru import logger
+from player_backends.player_backend import PlayerBackend  # type: ignore
 from playlist.song import Song  # type: ignore
 
 
 class FakeLoader(AbstractLoader):
-    def __init__(self, file_list: List[str]) -> None:
-        super().__init__(player_backends={"FakeBackend": lambda: FakePlayerBackend()})
-        self.file_list = file_list
-        self.songs_to_load = len(file_list)
-        self.songs_loaded = 0
+    priority = 10
+
+    def __init__(self, player_backends: Dict[str, Callable[[], PlayerBackend]]) -> None:
+        super().__init__(player_backends)
+
         self.loading_thread: Optional[threading.Thread] = None
 
     def start_loading(self) -> None:

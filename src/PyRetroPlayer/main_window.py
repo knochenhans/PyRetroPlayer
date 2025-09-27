@@ -4,19 +4,10 @@ import sys
 from typing import Any, Dict, List, Optional
 
 from appdirs import user_config_dir, user_data_dir  # type: ignore
+from icons import Icons  # type: ignore
 from importlib_resources import files
 from loguru import logger
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QCloseEvent
-from PySide6.QtWidgets import (
-    QApplication,
-    QFileDialog,
-    QMainWindow,
-)
-
-from icons import Icons  # type: ignore
-from loaders.fake_loader import FakeLoader  # type: ignore
-from loaders.file_fetcher import FileFetcher  # type: ignore
+from player_backends.fake_player_backend import FakePlayerBackend  # type: ignore
 from playlist.column_manager import ColumnManager  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
 from playlist.playlist_manager import PlaylistManager  # type: ignore
@@ -24,6 +15,13 @@ from playlist.playlist_tab_widget import PlaylistTabWidget  # type: ignore
 from playlist.playlist_tree_view import PlaylistTreeView  # type: ignore
 from playlist.song import Song  # type: ignore
 from playlist.song_library import SongLibrary  # type: ignore
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QCloseEvent
+from PySide6.QtWidgets import (
+    QApplication,
+    QFileDialog,
+    QMainWindow,
+)
 from settings.settings import Settings  # type: ignore
 
 
@@ -85,6 +83,14 @@ class MainWindow(QMainWindow):
         # Create a new playlist if none exist
         if not self.playlist_manager.playlists:
             self.create_new_playlist()
+
+        self.player_backends: Dict[str, Any] = {
+            "FakeBackend": lambda: FakePlayerBackend()
+        }
+
+        from file_manager import FileManager  # type: ignore
+
+        self.file_manager = FileManager(self)
 
     def create_new_playlist(self) -> None:
         playlist = Playlist(name="New Playlist")
@@ -190,59 +196,16 @@ class MainWindow(QMainWindow):
         self.song_library.clear()
 
     def load_all_songs_from_library(self) -> None:
-        songs = self.song_library.get_all_songs()
-        for song in songs:
-            id = song.id
-
-            current_index = self.tab_widget.currentIndex()
-            if current_index != -1:
-                playlist = self.playlist_manager.playlists[current_index]
-                playlist.add_song(id)
-
-        self.update_playlist_view()
+        self.file_manager.load_all_songs_from_library()
 
     def load_files(self, file_paths: List[str], playlist: Playlist) -> None:
-        file_fetcher = FileFetcher()
-        file_list = file_fetcher.get_files_recursively_from_path_list(file_paths)
-
-        self.ui_manager.progress_bar.show()
-
-        self.total_files = len(file_list)
-        self.files_remaining = self.total_files
-        self.ui_manager.progress_bar.setMaximum(self.total_files)
-
-        self.file_loader = FakeLoader(file_list)
-        self.file_loader.set_song_loaded_callback(self.on_song_loaded)
-        self.file_loader.set_all_songs_loaded_callback(self.on_all_songs_loaded)
-        self.file_loader.start_loading()
-
-        self.progress_bar_value_changed.connect(self.ui_manager.progress_bar.setValue)
+        self.file_manager.load_files(file_paths, playlist)
 
     def on_song_loaded(self, song: Optional[Song]) -> None:
-        if song is None:
-            logger.error("Failed to load song.")
-            return
-
-        self.song_library.add_song(song)
-
-        current_index = self.tab_widget.currentIndex()
-        if current_index != -1:
-            playlist = self.playlist_manager.playlists[current_index]
-            playlist.add_song(song.id)
-
-        self.files_remaining -= 1
-        self.progress_bar_value_changed.emit(self.total_files - self.files_remaining)
-        logger.info(f"Loaded song: {song.title} by {song.artist}")
+        self.file_manager.on_song_loaded(song)
 
     def on_all_songs_loaded(self) -> None:
-        self.progress_bar_value_changed.emit(self.total_files)
-        self.ui_manager.progress_bar.hide()
-        logger.info("All songs have been loaded.")
-        if self.file_loader:
-            self.file_loader.all_songs_loaded_callback = None
-            self.file_loader = None
-
-        self.update_playlist_view()
+        self.file_manager.on_all_songs_loaded()
 
     def update_playlist_view(self):
         playlist_tree_view = self.tab_widget.currentWidget()
