@@ -1,5 +1,4 @@
 from typing import Any, Dict, List, Optional
-import json
 
 from icons import Icons  # type: ignore
 from loguru import logger
@@ -157,12 +156,6 @@ class PlaylistTreeView(QTreeView):
             row = index.row()
             print(f"Playing item at row {row}")
             self.set_currently_playing_row(row)
-
-    # def setModel(self, model: Optional[QAbstractItemModel]) -> None:
-    #     super().setModel(model)
-    #     # Only assign if model is a ColumnFilterProxy
-    #     if isinstance(model, ColumnFilterProxy):
-    #         self.playlist_model = model
 
     def on_item_double_clicked(self, index: QModelIndex) -> None:
         self.item_double_clicked.emit(index.row())
@@ -322,7 +315,6 @@ class PlaylistTreeView(QTreeView):
             logger.info(f"Playlist saved to {file_path}")
         except IOError as e:
             logger.error(f"Failed to save playlist to {file_path}: {e}")
-
 
     # def hide_invisible_columns(self) -> None:
     #     for i, column_id in enumerate(self.column_manager.columns):
