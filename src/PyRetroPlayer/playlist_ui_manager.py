@@ -1,19 +1,56 @@
+import json
 import os
+from typing import Any, Dict, List
 
 from icons import Icons  # type: ignore
+from importlib_resources import files
 from loguru import logger
 from main_window import MainWindow  # type: ignore
 from playlist.column_manager import ColumnManager  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
+from playlist.playlist_manager import PlaylistManager  # type: ignore
+from playlist.playlist_tab_widget import PlaylistTabWidget  # type: ignore
 from playlist.playlist_tree_view import PlaylistTreeView  # type: ignore
 from PySide6.QtWidgets import QFileDialog
+from settings.settings import Settings  # type: ignore
 
 
 class PlaylistUIManager:
     def __init__(self, main_window: "MainWindow") -> None:
         self.main_window = main_window
-        self.playlist_manager = main_window.playlist_manager
-        self.column_default_definitions = main_window.column_default_definitions
+        self.playlist_configuration: Settings = Settings(
+            "playlist_configuration",
+            main_window.config_dir,
+            self.main_window.application_name,
+        )
+        self.playlist_configuration.ensure_default_config()
+        self.playlist_configuration.load()
+
+        self.column_default_definitions: List[Dict[str, Any]] = json.loads(
+            files("data").joinpath("default_columns_configuration.json").read_text()
+        )
+
+        self.column_managers: Dict[str, ColumnManager] = {}
+        self.playlist_manager = PlaylistManager(self.main_window.application_name)
+
+        self.tab_widget: PlaylistTabWidget = PlaylistTabWidget(
+            self.main_window, self.playlist_manager
+        )
+        self.tab_widget.tab_added.connect(self.create_new_playlist)
+        self.tab_widget.tab_deleted.connect(self.on_delete_playlist)
+        self.main_window.ui_manager.add_widget(self.tab_widget)
+
+        # Load playlists and add tabs
+        self.playlist_manager.load_playlists()
+        for playlist in self.playlist_manager.playlists:
+            self.add_playlist(
+                playlist,
+                self.load_or_create_column_manager(playlist),
+            )
+
+        # Create a new playlist if none exist
+        if not self.playlist_manager.playlists:
+            self.create_new_playlist()
 
     def create_new_playlist(self) -> None:
         playlist = Playlist(name="New Playlist")
@@ -21,10 +58,10 @@ class PlaylistUIManager:
         self.add_playlist_with_manager(playlist)
 
     def add_playlist(self, playlist: Playlist, column_manager: ColumnManager) -> None:
-        icons = Icons(self.main_window.playlist_configuration, self.main_window.style())
+        icons = Icons(self.playlist_configuration, self.main_window.style())
         playlist_view = PlaylistTreeView(
             icons,
-            self.main_window.playlist_configuration,
+            self.playlist_configuration,
             playlist,
             column_manager,
             self.column_default_definitions,
@@ -33,8 +70,8 @@ class PlaylistUIManager:
         )
 
         playlist.name = playlist.name or ""
-        self.main_window.tab_widget.addTab(playlist_view, playlist.name)
-        self.main_window.column_managers[playlist.id] = column_manager
+        self.tab_widget.addTab(playlist_view, playlist.name)
+        self.column_managers[playlist.id] = column_manager
 
         playlist_view.files_dropped.connect(
             lambda file_paths: self.main_window.file_manager.load_files(
@@ -43,9 +80,9 @@ class PlaylistUIManager:
         )
 
     def on_delete_playlist(self) -> None:
-        current_index = self.main_window.tab_widget.currentIndex()
+        current_index = self.tab_widget.currentIndex()
         if current_index != -1:
-            self.main_window.tab_widget.on_tab_close(current_index)
+            self.tab_widget.on_tab_close(current_index)
 
     def import_playlist(self) -> None:
         file_path, _ = QFileDialog.getOpenFileName(
@@ -61,7 +98,7 @@ class PlaylistUIManager:
                 logger.error("Failed to import playlist.")
 
     def export_playlist(self) -> None:
-        current_index = self.main_window.tab_widget.currentIndex()
+        current_index = self.tab_widget.currentIndex()
         if current_index != -1:
             playlist = self.playlist_manager.playlists[current_index]
             file_path, _ = QFileDialog.getSaveFileName(
