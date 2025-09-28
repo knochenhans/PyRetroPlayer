@@ -1,17 +1,19 @@
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from appdirs import user_config_dir, user_data_dir  # type: ignore
 from player_backends.fake_player_backend import FakePlayerBackend  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
 from playlist.song import Song  # type: ignore
 from playlist.song_library import SongLibrary  # type: ignore
-from PySide6.QtCore import Signal
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction, QCloseEvent, QIcon  # type: ignore
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
+    QSlider,
+    QToolBar,
 )
 
 
@@ -51,6 +53,79 @@ class MainWindow(QMainWindow):
         self.player_backends: Dict[str, Any] = {
             "FakeBackend": lambda: FakePlayerBackend()
         }
+
+        from player_control_manager import PlayerControlManager  # type: ignore
+
+        self.player_control_manager = PlayerControlManager(self)
+
+        self.icon_bar = QToolBar("Main Toolbar", self)
+        self.addToolBar(self.icon_bar)
+        self.setup_icon_bar()
+
+    def setup_icon_bar(self) -> None:
+        icon_actions: List[Tuple[str, str, str, Callable[[], None]]] = [
+            (
+                "media-playback-stop",
+                "Stop",
+                "Stop playback",
+                self.player_control_manager.on_stop_pressed,
+            ),
+            (
+                "media-playback-start",
+                "Play",
+                "Start playback",
+                self.player_control_manager.on_play_pressed,
+            ),
+            (
+                "media-playback-pause",
+                "Pause",
+                "Pause playback",
+                self.player_control_manager.on_pause_pressed,
+            ),
+            (
+                "media-skip-backward",
+                "Previous",
+                "Previous track",
+                self.player_control_manager.on_previous_pressed,
+            ),
+            (
+                "media-skip-forward",
+                "Next",
+                "Next track",
+                self.player_control_manager.on_next_pressed,
+            ),
+        ]
+
+        for icon_name, action_text, status_tip, slot_method in icon_actions:
+            icon = QIcon.fromTheme(icon_name)
+            action = QAction(icon, action_text, self)
+            action.setStatusTip(status_tip)
+            action.triggered.connect(slot_method)
+            self.icon_bar.addAction(action)
+
+        self.icon_bar.addSeparator()
+
+        # Add volume slider
+        progress_slider = QSlider(Qt.Orientation.Horizontal)
+        progress_slider.setRange(0, 100)
+        progress_slider.setValue(0)
+        progress_slider.setToolTip("Playback Progress")
+        # progress_slider.valueChanged.connect(self.on_progress_changed)
+        self.icon_bar.addWidget(progress_slider)
+
+        # progress_slider.sliderMoved.connect(self.on_seek)
+
+        self.icon_bar.addSeparator()
+
+        # Add progess slider
+        volume_slider = QSlider(Qt.Orientation.Horizontal)
+        volume_slider.setRange(0, 100)
+        volume_slider.setValue(50)
+        volume_slider.setToolTip("Volume")
+        volume_slider.setMaximumWidth(100)
+
+        # volume_slider.valueChanged.connect(self.on_volume_changed)
+        self.icon_bar.addWidget(volume_slider)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.playlist_ui_manager.playlist_manager.save_playlists()
