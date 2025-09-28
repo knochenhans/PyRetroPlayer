@@ -29,7 +29,7 @@ class FakeLoader(AbstractLoader):
             song = self.load_song(file_path)
             if song:
                 self.songs_loaded += 1
-            time.sleep(0.1)
+            time.sleep(0.1)  # Simulate some loading time
         if self.songs_loaded == self.songs_to_load:
             self.all_songs_loaded()
 

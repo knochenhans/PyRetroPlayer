@@ -4,22 +4,18 @@ import sys
 from typing import Any, Dict, List, Optional
 
 from appdirs import user_config_dir, user_data_dir  # type: ignore
-from icons import Icons  # type: ignore
 from importlib_resources import files
-from loguru import logger
 from player_backends.fake_player_backend import FakePlayerBackend  # type: ignore
 from playlist.column_manager import ColumnManager  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
 from playlist.playlist_manager import PlaylistManager  # type: ignore
 from playlist.playlist_tab_widget import PlaylistTabWidget  # type: ignore
-from playlist.playlist_tree_view import PlaylistTreeView  # type: ignore
 from playlist.song import Song  # type: ignore
 from playlist.song_library import SongLibrary  # type: ignore
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QApplication,
-    QFileDialog,
     QMainWindow,
 )
 from settings.settings import Settings  # type: ignore
@@ -54,15 +50,6 @@ class MainWindow(QMainWindow):
 
         self.playlist_manager = PlaylistManager(self.application_name)
 
-        self.tab_widget: PlaylistTabWidget = PlaylistTabWidget(
-            self, self.playlist_manager
-        )
-        self.tab_widget.tab_added.connect(self.create_new_playlist)
-        self.tab_widget.tab_deleted.connect(self.on_delete_playlist)
-        self.ui_manager.add_widget(self.tab_widget)
-
-        self.ui_manager.create_menu_bar()
-
         default_columns_definitions = (
             files("data").joinpath("default_columns_configuration.json").read_text()
         )
@@ -71,60 +58,42 @@ class MainWindow(QMainWindow):
             default_columns_definitions
         )
 
-        self.column_managers: dict[str, ColumnManager] = {}
+        from file_manager import FileManager  # type: ignore
+
+        self.file_manager = FileManager(self)
+
+        from playlist_ui_manager import PlaylistUIManager  # type: ignore
+
+        self.playlist_ui_manager = PlaylistUIManager(self)
+
+        self.tab_widget: PlaylistTabWidget = PlaylistTabWidget(
+            self, self.playlist_manager
+        )
+        self.tab_widget.tab_added.connect(self.playlist_ui_manager.create_new_playlist)
+        self.tab_widget.tab_deleted.connect(self.playlist_ui_manager.on_delete_playlist)
+        self.ui_manager.add_widget(self.tab_widget)
+
+        self.ui_manager.create_menu_bar()
+
+        self.column_managers: Dict[str, ColumnManager] = {}
 
         self.song_library = SongLibrary(os.path.join(data_dir, "song_library.db"))
 
         # Load playlists and add tabs
         self.playlist_manager.load_playlists()
         for playlist in self.playlist_manager.playlists:
-            self.add_playlist(playlist, self.load_or_create_column_manager(playlist))
+            self.playlist_ui_manager.add_playlist(
+                playlist,
+                self.playlist_ui_manager.load_or_create_column_manager(playlist),
+            )
 
         # Create a new playlist if none exist
         if not self.playlist_manager.playlists:
-            self.create_new_playlist()
+            self.playlist_ui_manager.create_new_playlist()
 
         self.player_backends: Dict[str, Any] = {
             "FakeBackend": lambda: FakePlayerBackend()
         }
-
-        from file_manager import FileManager  # type: ignore
-
-        self.file_manager = FileManager(self)
-
-    def create_new_playlist(self) -> None:
-        playlist = Playlist(name="New Playlist")
-        self.playlist_manager.add_playlist(playlist)
-        self.add_playlist_with_manager(playlist)
-
-    def on_delete_playlist(self) -> None:
-        current_index = self.tab_widget.currentIndex()
-        if current_index != -1:
-            self.tab_widget.on_tab_close(current_index)
-
-    def import_playlist(self) -> None:
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Import Playlist", "", "JSON Files (*.json)"
-        )
-        if file_path:
-            playlist = self.playlist_manager.load_playlist(file_path)
-            if playlist:
-                self.add_playlist_with_manager(playlist)
-                logger.info(f"Imported playlist: {playlist.name}")
-                self.playlist_manager.add_playlist(playlist)
-            else:
-                logger.error("Failed to import playlist.")
-
-    def export_playlist(self) -> None:
-        current_index = self.tab_widget.currentIndex()
-        if current_index != -1:
-            playlist = self.playlist_manager.playlists[current_index]
-            file_path, _ = QFileDialog.getSaveFileName(
-                self, "Export Playlist", "", "JSON Files (*.json)"
-            )
-            if file_path:
-                self.playlist_manager.save_playlist(playlist, file_path)
-                logger.info(f"Exported playlist: {playlist.name}")
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.playlist_manager.save_playlists()
@@ -139,59 +108,6 @@ class MainWindow(QMainWindow):
         for playlist_id, column_manager in self.column_managers.items():
             config_path = os.path.join(columns_dir, f"{playlist_id}.json")
             column_manager.save_to_json(config_path)
-
-    def add_playlist(self, playlist: Playlist, column_manager: ColumnManager) -> None:
-        icons = Icons(self.playlist_configuration, self.style())
-        playlist_view = PlaylistTreeView(
-            icons,
-            self.playlist_configuration,
-            playlist,
-            column_manager,
-            self.column_default_definitions,
-            self.song_library,
-            self,
-        )
-
-        playlist.name = playlist.name or ""
-        self.tab_widget.addTab(playlist_view, playlist.name)
-        self.column_managers[playlist.id] = column_manager
-
-        playlist_view.files_dropped.connect(
-            lambda file_paths: self.load_files(file_paths, playlist)
-        )
-
-    def load_or_create_column_manager(self, playlist: Playlist) -> ColumnManager:
-        config_path = os.path.join(
-            self.playlist_manager.playlists_path,
-            "columns",
-            f"{playlist.id}.json",
-        )
-        if os.path.exists(config_path):
-            return ColumnManager.load_from_json(config_path)
-        return ColumnManager(self.column_default_definitions)
-
-    def add_playlist_with_manager(self, playlist: Playlist) -> None:
-        column_manager = ColumnManager(self.column_default_definitions)
-        self.add_playlist(playlist, column_manager)
-
-    def add_files(self) -> None:
-        file_paths, _ = QFileDialog.getOpenFileNames(
-            self, "Add Files", "", "All Files (*);;Audio Files (*.mp3 *.wav *.flac)"
-        )
-        if file_paths:
-            current_index = self.tab_widget.currentIndex()
-            if current_index != -1:
-                playlist = self.playlist_manager.playlists[current_index]
-                self.load_files(file_paths, playlist)
-
-    def add_folder(self) -> None:
-        folder_path = QFileDialog.getExistingDirectory(self, "Add Folder", "")
-        if folder_path:
-            current_index = self.tab_widget.currentIndex()
-            if current_index != -1:
-                playlist = self.playlist_manager.playlists[current_index]
-                file_paths = [folder_path]
-                self.load_files(file_paths, playlist)
 
     def remove_missing_files(self) -> None:
         self.song_library.remove_missing_files()
@@ -210,11 +126,6 @@ class MainWindow(QMainWindow):
 
     def on_all_songs_loaded(self) -> None:
         self.file_manager.on_all_songs_loaded()
-
-    # def update_playlist_view(self):
-    #     playlist_tree_view = self.tab_widget.currentWidget()
-    #     if isinstance(playlist_tree_view, PlaylistTreeView):
-    #         playlist_tree_view.update_playlist_data()
 
 
 if __name__ == "__main__":

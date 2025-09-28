@@ -52,22 +52,34 @@ class UIManager:
     def create_file_menu(self, menu_bar: QMenuBar) -> None:
         file_menu = menu_bar.addMenu("&File")
 
-        self.add_menu_action(file_menu, "Add &Files...", self.main_window.add_files)
-        self.add_menu_action(file_menu, "Add &Folder...", self.main_window.add_folder)
+        self.add_menu_action(
+            file_menu, "Add &Files...", self.main_window.file_manager.add_files
+        )
+        self.add_menu_action(
+            file_menu, "Add &Folder...", self.main_window.file_manager.add_folder
+        )
 
         file_menu.addSeparator()
 
         self.add_menu_action(
-            file_menu, "&New Playlist", self.main_window.create_new_playlist
+            file_menu,
+            "&New Playlist",
+            self.main_window.playlist_ui_manager.create_new_playlist,
         )
         self.add_menu_action(
-            file_menu, "&Import Playlist", self.main_window.import_playlist
+            file_menu,
+            "&Import Playlist",
+            self.main_window.playlist_ui_manager.import_playlist,
         )
         self.add_menu_action(
-            file_menu, "&Export Playlist", self.main_window.export_playlist
+            file_menu,
+            "&Export Playlist",
+            self.main_window.playlist_ui_manager.export_playlist,
         )
         self.add_menu_action(
-            file_menu, "&Delete Playlist", self.main_window.on_delete_playlist
+            file_menu,
+            "&Delete Playlist",
+            self.main_window.playlist_ui_manager.on_delete_playlist,
         )
 
         file_menu.addSeparator()

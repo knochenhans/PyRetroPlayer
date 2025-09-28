@@ -7,6 +7,9 @@ from loguru import logger
 from main_window import MainWindow  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
 from playlist.song import Song  # type: ignore
+from PySide6.QtWidgets import (
+    QFileDialog,
+)
 
 
 class FileManager:
@@ -89,3 +92,27 @@ class FileManager:
                 playlist.add_song(id)
 
         # self.main_window.update_playlist_view()
+
+    def add_files(self) -> None:
+        file_paths, _ = QFileDialog.getOpenFileNames(
+            self.main_window,
+            "Add Files",
+            "",
+            "All Files (*);;Audio Files (*.mp3 *.wav *.flac)",
+        )
+        if file_paths:
+            current_index = self.main_window.tab_widget.currentIndex()
+            if current_index != -1:
+                playlist = self.main_window.playlist_manager.playlists[current_index]
+                self.load_files(file_paths, playlist)
+
+    def add_folder(self) -> None:
+        folder_path = QFileDialog.getExistingDirectory(
+            self.main_window, "Add Folder", ""
+        )
+        if folder_path:
+            current_index = self.main_window.tab_widget.currentIndex()
+            if current_index != -1:
+                playlist = self.main_window.playlist_manager.playlists[current_index]
+                file_paths = [folder_path]
+                self.load_files(file_paths, playlist)
