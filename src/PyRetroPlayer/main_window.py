@@ -156,6 +156,10 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(playlist_view, playlist.name)
         self.column_managers[playlist.id] = column_manager
 
+        playlist_view.files_dropped.connect(
+            lambda file_paths: self.load_files(file_paths, playlist)
+        )
+
     def load_or_create_column_manager(self, playlist: Playlist) -> ColumnManager:
         config_path = os.path.join(
             self.playlist_manager.playlists_path,
@@ -207,10 +211,10 @@ class MainWindow(QMainWindow):
     def on_all_songs_loaded(self) -> None:
         self.file_manager.on_all_songs_loaded()
 
-    def update_playlist_view(self):
-        playlist_tree_view = self.tab_widget.currentWidget()
-        if isinstance(playlist_tree_view, PlaylistTreeView):
-            playlist_tree_view.update_playlist_data()
+    # def update_playlist_view(self):
+    #     playlist_tree_view = self.tab_widget.currentWidget()
+    #     if isinstance(playlist_tree_view, PlaylistTreeView):
+    #         playlist_tree_view.update_playlist_data()
 
 
 if __name__ == "__main__":

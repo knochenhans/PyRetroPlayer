@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 from loguru import logger
 from playlist.song import Song  # type: ignore
@@ -17,14 +17,21 @@ class Playlist:
         self.id = id if id else str(uuid.uuid4())
         self.name = name
         self.song_ids = song_ids or []
+        self.song_added: Optional[Callable[[str], None]] = None
+        self.song_removed: Optional[Callable[[str], None]] = None
 
     def add_song(self, song_id: str) -> None:
-        if song_id not in self.song_ids:
-            self.song_ids.append(song_id)
+        self.song_ids.append(song_id)
+
+        if self.song_added:
+            self.song_added(song_id)
 
     def remove_song(self, song_id: str) -> None:
         if song_id in self.song_ids:
             self.song_ids.remove(song_id)
+
+            if self.song_removed:
+                self.song_removed(song_id)
 
     def get_songs(self) -> List[str]:
         return self.song_ids

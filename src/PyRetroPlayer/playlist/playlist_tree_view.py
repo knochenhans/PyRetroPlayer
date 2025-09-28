@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List, Optional
 
 from icons import Icons  # type: ignore
@@ -7,6 +8,7 @@ from playlist.column_manager import ColumnManager  # type: ignore
 from playlist.drag_drop_reorder_proxy import DragDropReorderProxy  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
 from playlist.playlist_item_model import PlaylistItemModel  # type: ignore
+from playlist.song import Song  # type: ignore
 from playlist.song_library import SongLibrary  # type: ignore
 from PySide6.QtCore import (
     QModelIndex,
@@ -16,6 +18,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import (
     QAction,
     QBrush,
+    QDragEnterEvent,
     QDropEvent,
     QIcon,
     QKeyEvent,
@@ -123,10 +126,13 @@ class PlaylistTreeView(QTreeView):
 
         self.setModel(reorder_proxy)
 
-        self.update_playlist_data()
+        self.load_playlist_data()
         self.set_column_widths(self.column_manager.get_column_widths())
 
         self.add_context_menu_actions()
+
+        playlist.song_added = self.on_song_added
+        playlist.song_removed = self.on_song_removed
 
     def add_context_menu_actions(self):
         # Action to remove selected rows
@@ -160,36 +166,35 @@ class PlaylistTreeView(QTreeView):
     def on_item_double_clicked(self, index: QModelIndex) -> None:
         self.item_double_clicked.emit(index.row())
 
-    def update_playlist_data(self) -> None:
+    def get_song_row_data(self, song: Song) -> Dict[str, str]:
+        row_data: Dict[str, str] = {}
+        for column_def in self.default_columns_definitions:
+            col_id = column_def.get("id", "")
+            match col_id:
+                case "title":
+                    row_data[col_id] = song.title
+                case "artist":
+                    row_data[col_id] = song.artist
+                case "file_path":
+                    row_data[col_id] = song.file_path
+                case "duration":
+                    row_data[col_id] = str(song.duration)
+                case "backend_name":
+                    row_data[col_id] = song.backend_name or ""
+                case _:
+                    custom_metadata = song.custom_metadata or {}
+                    row_data[col_id] = custom_metadata.get(col_id, "")
+        logger.debug(f"Loaded song data: {row_data} into playlist tree view")
+        return row_data
+
+    def load_playlist_data(self) -> None:
         songs = self.playlist.get_songs_metadata(self.song_library)
 
         data: List[Dict[str, str]] = []
         for song in songs:
-            row_data: Dict[str, str] = {}
-            for column_def in self.default_columns_definitions:
-                col_id = column_def.get("id", "")
-
-                # if col_id == "playing":
-                #     continue
-
-                match col_id:
-                    case "title":
-                        row_data[col_id] = song.title
-                    case "artist":
-                        row_data[col_id] = song.artist
-                    case "file_path":
-                        row_data[col_id] = song.file_path
-                    case "duration":
-                        row_data[col_id] = str(song.duration)
-                    case "backend_name":
-                        row_data[col_id] = song.backend_name or ""
-                    case _:
-                        custom_metadata = song.custom_metadata or {}
-                        row_data[col_id] = custom_metadata.get(col_id, "")
-
+            row_data = self.get_song_row_data(song)
             data.append(row_data)
-
-            logger.debug(f"Adding row data: {row_data}")
+            # logger.debug(f"Adding row data: {row_data}")
 
         self.model().removeRows(0, self.model().rowCount())
         for row_data in data:
@@ -205,7 +210,7 @@ class PlaylistTreeView(QTreeView):
 
             item = QStandardItem(row_data.get(col_id, ""))
 
-            logger.debug(f"Adding item: {col_id} with value: {item.text()}")
+            # logger.debug(f"Adding item: {col_id} with value: {item.text()}")
 
             tree_cols.append(item)
         self.source_model.appendRow(tree_cols)
@@ -218,15 +223,11 @@ class PlaylistTreeView(QTreeView):
     def get_selected_rows(self) -> List[int]:
         return sorted(set(index.row() for index in self.selectedIndexes()))
 
-    # def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-    #     if event.mimeData().hasUrls():
-    #         event.acceptProposedAction()
-    #     super().dragEnterEvent(event)
-
-    # def dragMoveEvent(self, event: QDragMoveEvent) -> None:
-    #     if event.mimeData().hasUrls():
-    #         event.acceptProposedAction()
-    #     super().dragMoveEvent(event)
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            super().dragEnterEvent(event)
 
     def dropEvent(self, event: QDropEvent) -> None:
         if event.mimeData().hasUrls():
@@ -234,7 +235,8 @@ class PlaylistTreeView(QTreeView):
             file_paths = [url.toLocalFile() for url in urls]
             self.files_dropped.emit(file_paths)
             event.acceptProposedAction()
-        super().dropEvent(event)
+        else:
+            super().dropEvent(event)
 
     def _set_play_status(self, row: int, enable: bool) -> None:
         column = self.source_model.itemFromIndex(self.model().index(row, 0))
@@ -316,8 +318,35 @@ class PlaylistTreeView(QTreeView):
         except IOError as e:
             logger.error(f"Failed to save playlist to {file_path}: {e}")
 
+    def on_song_added(self, song_id: str) -> None:
+        song = self.song_library.get_song(song_id)
+        if song:
+            row_data = self.get_song_row_data(song)
+            self.add_row(row_data)
+            logger.info(f"Song added to playlist view: {song.title} by {song.artist}")
+        else:
+            logger.warning(f"Song ID {song_id} not found in library; cannot add.")
+
+    def on_song_removed(self, song_id: str) -> None:
+        song = self.song_library.get_song(song_id)
+        if song:
+            try:
+                row = self.playlist.get_songs().index(song.id)
+                self.remove_row(row)
+                logger.info(
+                    f"Song removed from playlist view: {song.title} by {song.artist}"
+                )
+            except ValueError:
+                logger.warning(
+                    f"Song ID {song_id} not found in playlist; cannot remove row."
+                )
+        else:
+            logger.warning(f"Song ID {song_id} not found in library; cannot remove.")
+
     # def hide_invisible_columns(self) -> None:
     #     for i, column_id in enumerate(self.column_manager.columns):
     #         hidden = not self.column_manager.is_column_visible(column_id)
+    #         self.setColumnHidden(i, hidden)
+    #         logger.debug(f"{'Hiding' if hidden else 'Showing'} column: {column_id}")
     #         self.setColumnHidden(i, hidden)
     #         logger.debug(f"{'Hiding' if hidden else 'Showing'} column: {column_id}")

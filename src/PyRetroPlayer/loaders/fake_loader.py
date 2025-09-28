@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, List, Optional
 
 from loaders.abstract_loader import AbstractLoader  # type: ignore
 from loguru import logger
@@ -15,6 +15,10 @@ class FakeLoader(AbstractLoader):
         super().__init__(player_backends)
 
         self.loading_thread: Optional[threading.Thread] = None
+
+    def reset(self) -> None:
+        self.loading_thread = None
+        return super().reset()
 
     def start_loading(self) -> None:
         self.loading_thread = threading.Thread(target=self.load_songs)
@@ -49,8 +53,3 @@ class FakeLoader(AbstractLoader):
         logger.debug(f"FakeLoader: Retrieving filename for song: {song.file_path}")
         song.title = song.file_path.split("/")[-1]  # Extract filename as the title
         return song
-
-    def all_songs_loaded(self) -> None:
-        logger.info("FakeLoader: All songs have been loaded.")
-        if self.all_songs_loaded_callback:
-            self.all_songs_loaded_callback()

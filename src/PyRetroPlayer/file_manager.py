@@ -55,12 +55,12 @@ class FileManager:
             logger.error("Failed to load song.")
             return
 
-        self.main_window.song_library.add_song(song)
+        id = self.main_window.song_library.add_song(song)
 
         current_index = self.main_window.tab_widget.currentIndex()
         if current_index != -1:
             playlist = self.main_window.playlist_manager.playlists[current_index]
-            playlist.add_song(song.id)
+            playlist.add_song(id)
 
         self.files_remaining -= 1
         self.main_window.progress_bar_value_changed.emit(
@@ -76,7 +76,7 @@ class FileManager:
             self.file_loader.all_songs_loaded_callback = None
             self.file_loader = None
 
-        self.main_window.update_playlist_view()
+        # self.main_window.update_playlist_view()
 
     def load_all_songs_from_library(self) -> None:
         songs = self.main_window.song_library.get_all_songs()
@@ -88,4 +88,4 @@ class FileManager:
                 playlist = self.main_window.playlist_manager.playlists[current_index]
                 playlist.add_song(id)
 
-        self.main_window.update_playlist_view()
+        # self.main_window.update_playlist_view()

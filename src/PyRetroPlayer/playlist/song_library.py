@@ -43,15 +43,16 @@ class SongLibrary:
         all_songs = self.get_all_songs()
         logger.debug(f"Existing songs in library: {[song.title for song in all_songs]}")
 
-    def add_song(self, song: Song) -> None:
+    def add_song(self, song: Song) -> str:
         with self.conn as conn:
             cur = conn.cursor()
-            cur.execute("SELECT 1 FROM songs WHERE file_path = ?", (song.file_path,))
-            if cur.fetchone():
+            cur.execute("SELECT id FROM songs WHERE file_path = ?", (song.file_path,))
+            row = cur.fetchone()
+            if row:
                 logger.info(
-                    f"Song already exists: {song.file_path} (ID: {song.id}). Not adding duplicate."
+                    f"Song already exists: {song.file_path} (ID: {row['id']}). Not adding duplicate."
                 )
-                return
+                return row["id"]
 
             cur.execute(
                 """
@@ -74,6 +75,7 @@ class SongLibrary:
                 ),
             )
             logger.info(f"Added song: {song.title} to library with ID: {song.id}")
+            return song.id
 
     def remove_song(self, song_id: str) -> None:
         with self.conn as conn:

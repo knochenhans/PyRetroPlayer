@@ -13,10 +13,19 @@ class AbstractLoader:
         self.song_loaded_callback: Optional[Callable[[Optional[Song]], None]] = None
         self.all_songs_loaded_callback: Optional[Callable[[], None]] = None
 
+        self.reset()
+
+    def reset(self) -> None:
+        self.file_list: List[str] = []
+        self.songs_to_load = 0
+        self.songs_loaded = 0
+        self.song_loaded_callback = None
+        self.all_songs_loaded_callback = None
+
     def set_file_list(self, file_list: List[str]) -> None:
+        self.reset()
         self.file_list = file_list
         self.songs_to_load = len(file_list)
-        self.songs_loaded = 0
 
     def set_song_loaded_callback(
         self, callback: Callable[[Optional[Song]], None]
@@ -68,3 +77,9 @@ class AbstractLoader:
                 player_backend.retrieve_song_info()
                 return player_backend.song
         return None
+    
+    def all_songs_loaded(self) -> None:
+        logger.info("All songs have been loaded.")
+        
+        if self.all_songs_loaded_callback:
+            self.all_songs_loaded_callback()
