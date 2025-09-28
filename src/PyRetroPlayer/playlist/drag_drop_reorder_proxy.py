@@ -62,7 +62,7 @@ class DragDropReorderProxy(QAbstractProxyModel):
             return self.createIndex(row, column)
         return QModelIndex()
 
-    def parent(self, index: QModelIndex | QPersistentModelIndex) -> QModelIndex:
+    def parent(self, index: QModelIndex | QPersistentModelIndex) -> QModelIndex:  # type: ignore[override]
         return QModelIndex()
 
     # Mapping
