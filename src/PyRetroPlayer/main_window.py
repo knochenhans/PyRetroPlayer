@@ -37,15 +37,12 @@ class MainWindow(QMainWindow):
         self.song_library = SongLibrary(os.path.join(self.data_dir, "song_library.db"))
 
         from ui_manager import UIManager  # type: ignore
+        from file_manager import FileManager  # type: ignore
+        from playlist_ui_manager import PlaylistUIManager  # type: ignore
+        from player_control_manager import PlayerControlManager  # type: ignore
 
         self.ui_manager = UIManager(self)
-
-        from file_manager import FileManager  # type: ignore
-
         self.file_manager = FileManager(self)
-
-        from playlist_ui_manager import PlaylistUIManager  # type: ignore
-
         self.playlist_ui_manager = PlaylistUIManager(self)
 
         self.ui_manager.create_menu_bar()
@@ -53,8 +50,6 @@ class MainWindow(QMainWindow):
         self.player_backends: Dict[str, Any] = {
             "FakeBackend": lambda: FakePlayerBackend()
         }
-
-        from player_control_manager import PlayerControlManager  # type: ignore
 
         self.player_control_manager = PlayerControlManager(self)
 
