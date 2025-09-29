@@ -23,3 +23,11 @@ class PlayerControlManager:
 
     def on_next_pressed(self) -> None:
         print("Next button pressed")
+
+    def on_seek(self, position: int) -> None:
+        print(f"Seek to position: {position}")
+        # Implement seek functionality here
+
+    def on_volume_changed(self, value: int) -> None:
+        print(f"Volume changed to: {value}")
+        # Implement volume change functionality here

@@ -1,14 +1,17 @@
 import os
 import sys
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from appdirs import user_config_dir, user_data_dir  # type: ignore
+from audio_backends.pyaudio.audio_backend_pyuadio import (  # type: ignore
+    AudioBackendPyAudio,
+)
 from player_backends.fake_player_backend import FakePlayerBackend  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
 from playlist.song import Song  # type: ignore
 from playlist.song_library import SongLibrary  # type: ignore
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction, QCloseEvent, QIcon  # type: ignore
+from PySide6.QtGui import QAction, QCloseEvent  # type: ignore
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -69,10 +72,12 @@ class MainWindow(QMainWindow):
             "FakeBackend": lambda: FakePlayerBackend()
         }
 
-        self.player_control_manager = PlayerControlManager(self)
+        self.audio_backends: Dict[str, Any] = {"PyAudio": lambda: AudioBackendPyAudio()}
+        self.audio_backend = self.audio_backends["PyAudio"]()
 
         self.icon_bar = QToolBar("Main Toolbar", self)
         self.addToolBar(self.icon_bar)
+
         self.setup_icon_bar()
 
         self.load_settings()
@@ -123,7 +128,7 @@ class MainWindow(QMainWindow):
         # progress_slider.valueChanged.connect(self.on_progress_changed)
         self.icon_bar.addWidget(progress_slider)
 
-        # progress_slider.sliderMoved.connect(self.on_seek)
+        progress_slider.sliderMoved.connect(self.player_control_manager.on_seek)
 
         self.icon_bar.addSeparator()
 
@@ -134,13 +139,11 @@ class MainWindow(QMainWindow):
         volume_slider.setToolTip("Volume")
         volume_slider.setMaximumWidth(100)
 
-        # volume_slider.valueChanged.connect(self.on_volume_changed)
+        volume_slider.sliderMoved.connect(self.player_control_manager.on_volume_changed)
         self.icon_bar.addWidget(volume_slider)
 
     def closeEvent(self, event: QCloseEvent) -> None:
-        self.playlist_ui_manager.playlist_manager.save_playlists()
-        self.playlist_ui_manager.tab_widget.update_tab_column_widths()
-        self.save_column_managers()
+        self.save_settings()
         event.accept()
 
     def save_column_managers(self) -> None:

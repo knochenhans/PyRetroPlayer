@@ -1,7 +1,7 @@
 import hashlib
 from typing import Any, Callable, Optional
 
-from playlist.song import Song
+from playlist.song import Song  # type: ignore
 
 
 class PlayerBackend:

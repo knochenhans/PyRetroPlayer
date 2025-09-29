@@ -1,7 +1,6 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from icons import Icons  # type: ignore
 from loguru import logger
 from playlist.column_filter_proxy import ColumnFilterProxy  # type: ignore
 from playlist.column_manager import ColumnManager  # type: ignore
@@ -17,13 +16,11 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import (
     QAction,
-    QBrush,
     QDragEnterEvent,
     QDropEvent,
     QIcon,
     QKeyEvent,
     QPainter,
-    QPalette,
     QStandardItem,
 )
 from PySide6.QtWidgets import (
@@ -73,22 +70,22 @@ class PlaylistTreeView(QTreeView):
 
     def __init__(
         self,
-        icons: Icons,
         settings: Settings,
         playlist: Playlist,
         column_manager: ColumnManager,
         default_columns_definitions: List[Dict[str, Any]],
         song_library: SongLibrary,
+        actions: List[QAction],
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
 
-        self.icons = icons
         self.settings = settings
         self.playlist = playlist
         self.column_manager = column_manager
         self.default_columns_definitions = default_columns_definitions
         self.song_library = song_library
+        self.actions_ = actions
 
         self.setSelectionBehavior(QTreeView.SelectionBehavior.SelectRows)
         self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
@@ -129,21 +126,11 @@ class PlaylistTreeView(QTreeView):
         self.load_playlist_data()
         self.set_column_widths(self.column_manager.get_column_widths())
 
-        self.add_context_menu_actions()
-
         playlist.song_added = self.on_song_added
         playlist.song_removed = self.on_song_removed
 
-    def add_context_menu_actions(self):
-        # Action to remove selected rows
-        remove_action = QAction("Remove", self)
-        remove_action.triggered.connect(self.remove_selected_rows)
-        self.addAction(remove_action)
-
-        # Action to play the selected item
-        play_action = QAction("Play", self)
-        play_action.triggered.connect(self.play_selected_item)
-        self.addAction(play_action)
+        for action in self.actions_:
+            self.addAction(action)
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key.Key_Delete:
@@ -156,7 +143,7 @@ class PlaylistTreeView(QTreeView):
         for row in reversed(selected_rows):  # Reverse to avoid index shifting
             self.remove_row(row)
 
-    def play_selected_item(self):
+    def set_selected_item_played(self):
         index = self.currentIndex()
         if index.isValid():
             row = index.row()
@@ -242,22 +229,10 @@ class PlaylistTreeView(QTreeView):
         column = self.source_model.itemFromIndex(self.model().index(row, 0))
 
         if column:
-            color = column.foreground().color()
-
-            if enable:
-                column.setData(
-                    self.icons.pixmap_icons["play"], Qt.ItemDataRole.DecorationRole
-                )
-                color.setRgb(255 - color.red(), 255 - color.green(), 255 - color.blue())
-            else:
-                column.setData(QIcon(), Qt.ItemDataRole.DecorationRole)
-
-                default_color = self.palette().color(QPalette.ColorRole.Text)
-                color.setRgb(
-                    default_color.red(), default_color.green(), default_color.blue()
-                )
-
-            column.setForeground(QBrush(color))
+            column.setData(
+                QIcon.fromTheme("media-playback-start"),
+                Qt.ItemDataRole.DecorationRole,
+            )
 
     def set_currently_playing_row(self, row: int) -> None:
         self._set_play_status(self.previous_row, False)

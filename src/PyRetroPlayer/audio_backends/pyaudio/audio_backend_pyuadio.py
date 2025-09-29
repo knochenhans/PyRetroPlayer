@@ -1,9 +1,8 @@
 import contextlib
 
+from audio_backends.audio_backend import AudioBackend  # type: ignore
 from loguru import logger
 from pyaudio import PyAudio, Stream, get_format_from_width
-
-from audio_backends.audio_backend import AudioBackend
 
 
 class AudioBackendPyAudio(AudioBackend):

@@ -2,7 +2,6 @@ import json
 import os
 from typing import Any, Dict, List
 
-from icons import Icons  # type: ignore
 from importlib_resources import files
 from loguru import logger
 from main_window import MainWindow  # type: ignore
@@ -58,14 +57,13 @@ class PlaylistUIManager:
         self.add_playlist_with_manager(playlist)
 
     def add_playlist(self, playlist: Playlist, column_manager: ColumnManager) -> None:
-        icons = Icons(self.playlist_configuration, self.main_window.style())
         playlist_view = PlaylistTreeView(
-            icons,
             self.playlist_configuration,
             playlist,
             column_manager,
             self.column_default_definitions,
             self.main_window.song_library,
+            self.main_window.actions_,
             self.main_window,
         )
 
