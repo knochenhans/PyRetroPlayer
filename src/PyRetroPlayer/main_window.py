@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QSlider,
     QToolBar,
 )
+from settings.settings import Settings  # type: ignore
 
 
 class MainWindow(QMainWindow):
@@ -32,14 +33,31 @@ class MainWindow(QMainWindow):
         self.data_dir = os.path.join(user_data_dir(), self.application_name)  # type: ignore
         os.makedirs(self.data_dir, exist_ok=True)
 
+        self.configuration: Settings = Settings(
+            "configuration",
+            self.config_dir,
+            self.application_name,
+        )
+        self.configuration.ensure_default_config()
+        self.configuration.load()
+
         self.setWindowTitle(f"{self.application_name} v{self.application_version}")
 
         self.song_library = SongLibrary(os.path.join(self.data_dir, "song_library.db"))
 
-        from ui_manager import UIManager  # type: ignore
+        from player_control_manager import PlayerControlManager  # type: ignore
+
+        self.player_control_manager = PlayerControlManager(self)
+
+        from actions_manager import ActionsManager  # type: ignore
+
+        self.actions_: List[QAction] = ActionsManager.get_actions_by_names(
+            self.player_control_manager, ["play", "pause", "stop", "previous", "next"]
+        )
+
         from file_manager import FileManager  # type: ignore
         from playlist_ui_manager import PlaylistUIManager  # type: ignore
-        from player_control_manager import PlayerControlManager  # type: ignore
+        from ui_manager import UIManager  # type: ignore
 
         self.ui_manager = UIManager(self)
         self.file_manager = FileManager(self)
@@ -57,45 +75,42 @@ class MainWindow(QMainWindow):
         self.addToolBar(self.icon_bar)
         self.setup_icon_bar()
 
-    def setup_icon_bar(self) -> None:
-        icon_actions: List[Tuple[str, str, str, Callable[[], None]]] = [
-            (
-                "media-playback-stop",
-                "Stop",
-                "Stop playback",
-                self.player_control_manager.on_stop_pressed,
-            ),
-            (
-                "media-playback-start",
-                "Play",
-                "Start playback",
-                self.player_control_manager.on_play_pressed,
-            ),
-            (
-                "media-playback-pause",
-                "Pause",
-                "Pause playback",
-                self.player_control_manager.on_pause_pressed,
-            ),
-            (
-                "media-skip-backward",
-                "Previous",
-                "Previous track",
-                self.player_control_manager.on_previous_pressed,
-            ),
-            (
-                "media-skip-forward",
-                "Next",
-                "Next track",
-                self.player_control_manager.on_next_pressed,
-            ),
-        ]
+        self.load_settings()
 
-        for icon_name, action_text, status_tip, slot_method in icon_actions:
-            icon = QIcon.fromTheme(icon_name)
-            action = QAction(icon, action_text, self)
-            action.setStatusTip(status_tip)
-            action.triggered.connect(slot_method)
+    def load_settings(self) -> None:
+        geometry = self.configuration.get("window_geometry")
+        if geometry:
+            try:
+                x, y, w, h = geometry
+                self.setGeometry(x, y, w, h)
+            except Exception:
+                pass
+
+        last_active_playlist_index = self.configuration.get(
+            "last_active_playlist_index", 0
+        )
+        self.playlist_ui_manager.tab_widget.setCurrentIndex(last_active_playlist_index)
+
+    def save_settings(self) -> None:
+        geo = self.geometry()
+        geometry = [geo.x(), geo.y(), geo.width(), geo.height()]
+        self.configuration.set("window_geometry", geometry)
+
+        current_tab_index = self.playlist_ui_manager.tab_widget.currentIndex()
+
+        self.configuration.set("last_active_playlist_index", current_tab_index)
+
+        self.playlist_ui_manager.playlist_manager.save_playlists()
+        self.playlist_ui_manager.tab_widget.update_tab_column_widths()
+
+        self.save_column_managers()
+
+        # current_volume = volume_slider.value()
+
+        self.configuration.save()
+
+    def setup_icon_bar(self) -> None:
+        for action in self.actions_:
             self.icon_bar.addAction(action)
 
         self.icon_bar.addSeparator()

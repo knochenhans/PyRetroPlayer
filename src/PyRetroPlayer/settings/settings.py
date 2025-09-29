@@ -27,7 +27,9 @@ class Settings:
 
         if os.path.exists(self.file_path):
             with open(self.file_path, "r") as f:
-                self.settings.update(json.load(f))
+                json_data = json.load(f)
+                if isinstance(json_data, Dict):
+                    self.settings.update(json_data)  # type: ignore
                 print(f"User settings loaded from {os.path.abspath(self.file_path)}")
 
     def save(self) -> None:
@@ -59,9 +61,10 @@ class Settings:
         user_config_path = os.path.join(config_dir, f"{self.name}.json")
 
         if not os.path.exists(user_config_path):
-            with default_config_path.open("r") as src, open(
-                user_config_path, "w"
-            ) as dst:
+            with (
+                default_config_path.open("r") as src,
+                open(user_config_path, "w") as dst,
+            ):
                 dst.write(src.read())
             print(f"Default configuration copied to {user_config_path}")
 
