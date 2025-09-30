@@ -10,6 +10,9 @@ class ColumnManager:
     def get_column_ids(self) -> List[str]:
         return self.column_order
 
+    def get_column_index(self, column_id: str) -> int:
+        return self.column_order.index(column_id)
+
     def get_column_name(self, column_id: str) -> str:
         return self.columns[column_id]["name"]
 

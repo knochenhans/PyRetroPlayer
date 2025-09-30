@@ -18,7 +18,8 @@ class PlayerControlManager:
         self.player_backend = main_window.player_backends["FakeBackend"]()
         self.state = self.PlayerState.STOPPED
         self.player_thread = None
-        self.queue_manager = QueueManager(history_playlist=Playlist(name="History"))
+        self.history_playlist = Playlist(name="History")
+        self.queue_manager = QueueManager(self.history_playlist)
 
     def set_player_state(self, new_state: "PlayerControlManager.PlayerState") -> None:
         logger.debug(f"Player state changed from {self.state} to {new_state}")
@@ -85,8 +86,24 @@ class PlayerControlManager:
 
     def on_song_finished(self) -> None:
         self.set_player_state(self.PlayerState.STOPPED)
-        # Handle end of song, e.g., play next song in playlist
-        pass
+        self.play_next()
+
+    def play_next(self) -> None:
+        self.play_queue()
+
+    def play_queue(self) -> None:
+        song = self.queue_manager.pop_next_song()
+
+        if song:
+            # self.play_song_from_index(song)
+            pass
+        # else:
+        #     if PlayingMode.RANDOM:
+        #         self.populate_queue()
+        #         song = self.queue_manager.pop_next_song()
+
+        #         if song:
+        #             self.play_module(song)
 
     def play_song_from_index(self, index: int, playlist: Playlist) -> None:
         song_id = playlist.get_song_id_by_index(index)
@@ -101,4 +118,3 @@ class PlayerControlManager:
 
         self.player_backend.load_song(song)
         self.set_player_state(self.PlayerState.PLAYING)
-

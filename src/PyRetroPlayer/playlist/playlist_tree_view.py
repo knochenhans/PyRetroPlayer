@@ -1,14 +1,6 @@
-import json
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
-from playlist.column_filter_proxy import ColumnFilterProxy  # type: ignore
-from playlist.column_manager import ColumnManager  # type: ignore
-from playlist.drag_drop_reorder_proxy import DragDropReorderProxy  # type: ignore
-from playlist.playlist import Playlist  # type: ignore
-from playlist.playlist_item_model import PlaylistItemModel  # type: ignore
-from playlist.song import Song  # type: ignore
-from playlist.song_library import SongLibrary  # type: ignore
 from PySide6.QtCore import (
     QModelIndex,
     Qt,
@@ -32,6 +24,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from settings.settings import Settings  # type: ignore
+
+from playlist.column_filter_proxy import ColumnFilterProxy  # type: ignore
+from playlist.column_manager import ColumnManager  # type: ignore
+from playlist.drag_drop_reorder_proxy import DragDropReorderProxy  # type: ignore
+from playlist.playlist import Playlist  # type: ignore
+from playlist.playlist_entry import PlaylistEntry  # type: ignore
+from playlist.playlist_item_model import PlaylistItemModel  # type: ignore
+from playlist.song_library import SongLibrary  # type: ignore
 
 
 class CustomItemViewStyle(QProxyStyle):
@@ -125,11 +125,11 @@ class PlaylistTreeView(QTreeView):
 
         self.setModel(reorder_proxy)
 
-        self.load_playlist_data()
+        self.get_playlist_data()
         self.set_column_widths(self.column_manager.get_column_widths())
 
-        playlist.song_added = self.on_song_added
-        playlist.song_removed = self.on_song_removed
+        playlist.song_added = self.on_entry_added
+        playlist.song_removed = self.on_entry_removed
 
         for action in self.actions_:
             self.addAction(action)
@@ -155,15 +155,29 @@ class PlaylistTreeView(QTreeView):
     def on_item_double_clicked(self, index: QModelIndex) -> None:
         self.item_double_clicked.emit(index.row())
 
-    def get_song_row_data(self, song: Song) -> Dict[str, str]:
+    def build_row_data(self, entry: PlaylistEntry) -> Dict[str, str]:
+        song = self.song_library.get_song(entry.song_id)
+
+        if not song:
+            logger.error(f"Song with ID {entry.song_id} not found in library")
+            return {}
+
         row_data: Dict[str, str] = {}
         for column_def in self.default_columns_definitions:
             col_id = column_def.get("id", "")
             match col_id:
+                case "entry_id":
+                    row_data[col_id] = entry.entry_id
+                case "song_id":
+                    row_data[col_id] = song.id
                 case "title":
                     row_data[col_id] = song.title
                 case "artist":
                     row_data[col_id] = song.artist
+                case "file_name":
+                    row_data[col_id] = (
+                        song.file_path.split("/")[-1] if song.file_path else ""
+                    )
                 case "file_path":
                     row_data[col_id] = song.file_path
                 case "duration":
@@ -187,12 +201,12 @@ class PlaylistTreeView(QTreeView):
         logger.debug(f"Loaded song data: {row_data} into playlist tree view")
         return row_data
 
-    def load_playlist_data(self) -> None:
-        songs = self.playlist.get_songs_metadata(self.song_library)
+    def get_playlist_data(self) -> None:
+        playlist_entries = self.playlist.get_songs_metadata(self.song_library)
 
         data: List[Dict[str, str]] = []
-        for song in songs:
-            row_data = self.get_song_row_data(song)
+        for playlist_entry in playlist_entries:
+            row_data = self.build_row_data(playlist_entry)
             data.append(row_data)
             # logger.debug(f"Adding row data: {row_data}")
 
@@ -217,7 +231,7 @@ class PlaylistTreeView(QTreeView):
 
     def remove_row(self, row: int) -> None:
         self.source_model.removeRow(row)
-        song_id = self.playlist.get_songs()[row]
+        song_id = self.playlist.get_song_ids()[row]
         self.playlist.remove_song(song_id)
 
     def get_selected_rows(self) -> List[int]:
@@ -239,7 +253,9 @@ class PlaylistTreeView(QTreeView):
             super().dropEvent(event)
 
     def _set_play_status(self, row: int, enable: bool) -> None:
-        item = self.source_model.item(row, 1)
+        item = self.source_model.item(
+            row, self.column_manager.get_column_index("playing")
+        )
 
         if item:
             if enable:
@@ -278,60 +294,32 @@ class PlaylistTreeView(QTreeView):
                 self.column_manager.set_column_width(column_id, current_width)
                 column_index += 1
 
-    def load_playlist(self, file_path: str) -> Optional[Playlist]:
-        try:
-            with open(file_path, "r") as f:
-                playlist_data = json.load(f)
-                logger.info(f"Loaded playlist: {playlist_data['name']}")
-                return Playlist(
-                    id=playlist_data["id"],
-                    name=playlist_data["name"],
-                    song_ids=playlist_data["song_ids"],
-                )
-        except (json.JSONDecodeError, KeyError, FileNotFoundError) as e:
-            logger.error(f"Failed to load playlist from {file_path}: {e}")
-            return None
-
-    def save_playlist(self, playlist: Playlist, file_path: str) -> None:
-        try:
-            with open(file_path, "w") as f:
-                json.dump(
-                    {
-                        "id": playlist.id,
-                        "name": playlist.name,
-                        "song_ids": playlist.get_songs(),
-                    },
-                    f,
-                    indent=4,
-                )
-            logger.info(f"Playlist saved to {file_path}")
-        except IOError as e:
-            logger.error(f"Failed to save playlist to {file_path}: {e}")
-
-    def on_song_added(self, song_id: str) -> None:
-        song = self.song_library.get_song(song_id)
+    def on_entry_added(self, entry: PlaylistEntry) -> None:
+        song = self.song_library.get_song(entry.song_id)
         if song:
-            row_data = self.get_song_row_data(song)
+            row_data = self.build_row_data(entry)
             self.add_row(row_data)
             logger.info(f"Song added to playlist view: {song.title} by {song.artist}")
         else:
-            logger.warning(f"Song ID {song_id} not found in library; cannot add.")
+            logger.warning(f"Song ID {entry.song_id} not found in library; cannot add.")
 
-    def on_song_removed(self, song_id: str) -> None:
-        song = self.song_library.get_song(song_id)
+    def on_entry_removed(self, entry: PlaylistEntry) -> None:
+        song = self.song_library.get_song(entry.song_id)
         if song:
             try:
-                row = self.playlist.get_songs().index(song.id)
+                row = self.playlist.get_song_ids().index(song.id)
                 self.remove_row(row)
                 logger.info(
                     f"Song removed from playlist view: {song.title} by {song.artist}"
                 )
             except ValueError:
                 logger.warning(
-                    f"Song ID {song_id} not found in playlist; cannot remove row."
+                    f"Song ID {entry.song_id} not found in playlist; cannot remove row."
                 )
         else:
-            logger.warning(f"Song ID {song_id} not found in library; cannot remove.")
+            logger.warning(
+                f"Song ID {entry.song_id} not found in library; cannot remove."
+            )
 
     # def hide_invisible_columns(self) -> None:
     #     for i, column_id in enumerate(self.column_manager.columns):

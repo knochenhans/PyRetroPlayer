@@ -1,7 +1,13 @@
 [
     {
-        "id": "id",
-        "name": "ID",
+        "id": "entry_id",
+        "name": "Entry ID",
+        "width": 50,
+        "visible": false
+    },
+    {
+        "id": "song_id",
+        "name": "Song ID",
         "width": 50,
         "visible": false
     },
@@ -12,8 +18,14 @@
         "visible": true
     },
     {
-        "id": "filename",
-        "name": "Filename",
+        "id": "file_name",
+        "name": "File Name",
+        "width": 200,
+        "visible": true
+    },
+    {
+        "id": "file_path",
+        "name": "File Path",
         "width": 150,
         "visible": true
     },
@@ -30,15 +42,9 @@
         "visible": true
     },
     {
-        "id": "backend",
+        "id": "backend_name",
         "name": "Backend",
         "width": 100,
-        "visible": true
-    },
-    {
-        "id": "path",
-        "name": "Path",
-        "width": 200,
         "visible": true
     },
     {

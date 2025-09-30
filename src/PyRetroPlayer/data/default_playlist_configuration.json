@@ -1,7 +1,11 @@
 {
     "columns": [
         {
-            "id": "id",
+            "id": "entry_id",
+            "name": ""
+        },
+        {
+            "id": "song_id",
             "name": ""
         },
         {
@@ -9,8 +13,8 @@
             "name": ""
         },
         {
-            "id": "filename",
-            "name": "Filename"
+            "id": "file_name",
+            "name": "File Name"
         },
         {
             "id": "title",
@@ -21,12 +25,12 @@
             "name": "Duration"
         },
         {
-            "id": "backend",
+            "id": "backend_name",
             "name": "Backend"
         },
         {
-            "id": "path",
-            "name": "Path"
+            "id": "file_path",
+            "name": "File Path"
         },
         {
             "id": "subsong",

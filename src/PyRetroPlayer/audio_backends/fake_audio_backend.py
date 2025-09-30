@@ -1,4 +1,4 @@
-from audio_backends.audio_backend import AudioBackend
+from audio_backends.audio_backend import AudioBackend  # type: ignore
 from typing import Any
 from loguru import logger
 

@@ -35,21 +35,21 @@ def song_ids() -> List[str]:
 
 def test_add_song(playlist: Playlist, song_ids: List[str]) -> None:
     playlist.add_song(song_ids[0])
-    assert playlist.get_songs() == [song_ids[0]]
+    assert playlist.get_song_ids() == [song_ids[0]]
     playlist.add_song(song_ids[0])  # Should not duplicate
-    assert playlist.get_songs() == [song_ids[0]]
+    assert playlist.get_song_ids() == [song_ids[0]]
 
 
 def test_remove_song(playlist: Playlist, song_ids: List[str]) -> None:
     playlist.add_song(song_ids[0])
     playlist.remove_song(song_ids[0])
-    assert playlist.get_songs() == []
+    assert playlist.get_song_ids() == []
 
 
 def test_get_songs(playlist: Playlist, song_ids: List[str]) -> None:
     for sid in song_ids:
         playlist.add_song(sid)
-    assert playlist.get_songs() == song_ids
+    assert playlist.get_song_ids() == song_ids
 
 
 def test_get_songs_metadata_removes_missing(
@@ -62,13 +62,13 @@ def test_get_songs_metadata_removes_missing(
     playlist.song_ids = [song_ids[0], song_ids[1], "missing_id"]
     songs = playlist.get_songs_metadata(library)
     assert len(songs) == 2
-    assert playlist.get_songs() == [song_ids[0], song_ids[1]]
+    assert playlist.get_song_ids() == [song_ids[0], song_ids[1]]
 
 
 def test_set_song_order(playlist: Playlist, song_ids: List[str]) -> None:
     playlist.song_ids = song_ids.copy()
     playlist.set_song_order([2, 0, 1])
-    assert playlist.get_songs() == [song_ids[2], song_ids[0], song_ids[1]]
+    assert playlist.get_song_ids() == [song_ids[2], song_ids[0], song_ids[1]]
 
 
 def test_set_song_order_invalid_length(
@@ -76,7 +76,7 @@ def test_set_song_order_invalid_length(
 ) -> None:
     playlist.song_ids = song_ids.copy()
     playlist.set_song_order([0, 1])  # Should not change order
-    assert playlist.get_songs() == song_ids
+    assert playlist.get_song_ids() == song_ids
 
 
 def test_set_song_order_invalid_index(
@@ -85,7 +85,7 @@ def test_set_song_order_invalid_index(
     playlist.song_ids = song_ids.copy()
     playlist.set_song_order([0, 1, 99])  # Should not raise, but log error
     # The order should not be changed for invalid index
-    assert playlist.get_songs() == song_ids
+    assert playlist.get_song_ids() == song_ids
 
 
 def test_save_and_load_playlist(tmp_path: Path, song_ids: List[str]) -> None:
@@ -96,7 +96,7 @@ def test_save_and_load_playlist(tmp_path: Path, song_ids: List[str]) -> None:
     loaded = Playlist.load_playlist(str(file_path))
     assert loaded is not None
     assert loaded.name == "Test"
-    assert loaded.get_songs() == song_ids
+    assert loaded.get_song_ids() == song_ids
 
 
 def test_load_playlist_invalid_file(tmp_path: Path) -> None:
