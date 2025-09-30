@@ -130,6 +130,7 @@ class PlaylistTreeView(QTreeView):
 
         playlist.song_added = self.on_entry_added
         playlist.song_removed = self.on_entry_removed
+        playlist.song_playing = self.set_currently_playing_entry
 
         for action in self.actions_:
             self.addAction(action)
@@ -264,19 +265,27 @@ class PlaylistTreeView(QTreeView):
                 item.clearData()
             self.viewport().update()
 
+    def on_currently_playing_changed(
+        self, playlist_entry: Optional[PlaylistEntry]
+    ) -> None:
+        if playlist_entry is not None:
+            self.set_currently_playing_entry(playlist_entry)
+
     def set_currently_playing_row(self, row: int) -> None:
         if self.previous_row != -1:
             self._set_play_status(self.previous_row, False)
         self._set_play_status(row, True)
         self.previous_row = row
 
-    def set_currently_playing_entry_id(self, entry_id: str) -> None:
+    def set_currently_playing_entry(self, entry: PlaylistEntry) -> None:
         for row in range(self.source_model.rowCount()):
-            item = self.source_model.item(row, 0)  # Assuming entry_id is in column 0
-            if item and item.text() == entry_id:
+            item = self.source_model.item(
+                row, self.column_manager.get_column_index("entry_id")
+            )
+            if item and item.text() == entry.entry_id:
                 self.set_currently_playing_row(row)
                 return
-        logger.warning(f"Entry ID {entry_id} not found in playlist view")
+        logger.warning(f"Entry ID {entry.entry_id} not found in playlist view")
 
     def get_current_item(self) -> Optional[QStandardItem]:
         index = self.currentIndex()

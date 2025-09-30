@@ -20,6 +20,7 @@ class Playlist:
         self.entries = entries or []
         self.song_added: Optional[Callable[[PlaylistEntry], None]] = None
         self.song_removed: Optional[Callable[[PlaylistEntry], None]] = None
+        self.song_playing: Optional[Callable[[Optional[PlaylistEntry]], None]] = None
         self.current_song_index: int = -1
 
     def add_song(self, song_id: str) -> None:
@@ -39,6 +40,17 @@ class Playlist:
         self.entries = new_entries
         if removed_entry and self.song_removed:
             self.song_removed(removed_entry)
+
+    def set_currently_playing_entry(self, entry: Optional[PlaylistEntry]) -> None:
+        if entry is None:
+            self.current_song_index = -1
+        else:
+            for idx, e in enumerate(self.entries):
+                if e.entry_id == entry.entry_id:
+                    self.current_song_index = idx
+                    break
+        if self.song_playing:
+            self.song_playing(entry)
 
     def get_song_ids(self) -> List[str]:
         return [entry.song_id for entry in self.entries]
@@ -126,5 +138,4 @@ class Playlist:
     ) -> List[PlaylistEntry]:
         if 0 <= start_index < len(self.entries):
             return self.entries[start_index : start_index + num_entries]
-        logger.warning(f"Start index out of range: {start_index}")
         return []

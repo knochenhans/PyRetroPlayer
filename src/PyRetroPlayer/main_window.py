@@ -7,9 +7,6 @@ from audio_backends.pyaudio.audio_backend_pyuadio import (  # type: ignore
     AudioBackendPyAudio,
 )
 from player_backends.fake_player_backend import FakePlayerBackend  # type: ignore
-from playlist.playlist import Playlist  # type: ignore
-from playlist.song import Song  # type: ignore
-from playlist.song_library import SongLibrary  # type: ignore
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QCloseEvent  # type: ignore
 from PySide6.QtWidgets import (
@@ -19,6 +16,10 @@ from PySide6.QtWidgets import (
     QToolBar,
 )
 from settings.settings import Settings  # type: ignore
+
+from playlist.playlist import Playlist  # type: ignore
+from playlist.song import Song  # type: ignore
+from playlist.song_library import SongLibrary  # type: ignore
 
 
 class MainWindow(QMainWindow):

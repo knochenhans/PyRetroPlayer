@@ -2,70 +2,66 @@ from collections import deque
 from typing import List, Optional
 
 from loguru import logger
+
 from playlist.playlist import Playlist  # type: ignore
-from playlist.song import Song  # type: ignore
+from playlist.playlist_entry import PlaylistEntry  # type: ignore
 
 
 class QueueManager:
     def __init__(self, history_playlist: Playlist) -> None:
-        self.queue: deque[Song] = deque()
+        self.queue: deque[PlaylistEntry] = deque()
         self.history_playlist = history_playlist
 
         # Set current song index to -1 to indicate that no song is playing
         self.history_playlist.current_song_index = -1
 
-    def add_song(self, song: Song) -> None:
-        self.queue.append(song)
+    def add_entry(self, entry: PlaylistEntry) -> None:
+        self.queue.append(entry)
 
-    def add_songs(self, songs: List[Song]) -> None:
-        self.queue.extend(songs)
+    def add_entries(self, entries: List[PlaylistEntry]) -> None:
+        self.queue.extend(entries)
 
-    def set_queue(self, songs: List[Song]) -> None:
-        self.queue = deque(songs)
+    def set_queue(self, entries: List[PlaylistEntry]) -> None:
+        self.queue = deque(entries)
 
-    def update_song(self, song: Song) -> None:
-        if song in self.queue:
-            index = self.queue.index(song)
-            self.queue[index] = song
+    def update_entry(self, entry: PlaylistEntry) -> None:
+        for idx, e in enumerate(self.queue):
+            if e.entry_id == entry.entry_id:
+                self.queue[idx] = entry
+                break
 
-    def pop_next_song(self) -> Optional[Song]:
+    def pop_next_entry(self) -> Optional[PlaylistEntry]:
         if self.queue:
-            song = self.queue.popleft()
+            entry = self.queue.popleft()
 
-            # Add song to history playlist
-            self.history_playlist.add_song(song.id)
+            # Add entry to history playlist
+            self.history_playlist.entries.append(entry)
             self.history_playlist.current_song_index += 1
 
             if len(self.queue) > 0:
                 logger.debug(
-                    f'Playing "{song.title}" from queue, remaining: {len(self.queue)}'
+                    f'Playing "{entry.song_id}" from queue, remaining: {len(self.queue)}'
                 )
             else:
                 logger.debug("Queue is empty.")
-            return song
+            return entry
         return None
 
-    def peek_next_song(self) -> Optional[Song]:
+    def peek_next_entry(self) -> Optional[PlaylistEntry]:
         return self.queue[0] if self.queue else None
 
-    def prioritize_song(self, song: Song) -> None:
-        if song in self.queue:
-            self.queue.remove(song)
-            self.queue.appendleft(song)
+    def prioritize_entry(self, entry: PlaylistEntry) -> None:
+        for e in self.queue:
+            if e.entry_id == entry.entry_id:
+                self.queue.remove(e)
+                self.queue.appendleft(e)
+                break
 
     def clear(self) -> None:
         self.queue.clear()
 
-    def get_queue(self) -> List[Song]:
+    def get_queue(self) -> List[PlaylistEntry]:
         return list(self.queue)
-
-    # def undo_last(self) -> None:
-    #     if self.history_playlist.get_length() > 0:
-    #         song = self.history_playlist.previous_song()
-
-    #         if song:
-    #             self.queue.appendleft(song)
-    #             self.history_playlist.remove_song(song)
 
     def is_empty(self) -> bool:
         return not bool(self.queue)

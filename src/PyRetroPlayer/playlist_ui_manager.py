@@ -5,13 +5,14 @@ from typing import Any, Dict, List
 from importlib_resources import files
 from loguru import logger
 from main_window import MainWindow  # type: ignore
+from PySide6.QtWidgets import QFileDialog
+from settings.settings import Settings  # type: ignore
+
 from playlist.column_manager import ColumnManager  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
 from playlist.playlist_manager import PlaylistManager  # type: ignore
 from playlist.playlist_tab_widget import PlaylistTabWidget  # type: ignore
 from playlist.playlist_tree_view import PlaylistTreeView  # type: ignore
-from PySide6.QtWidgets import QFileDialog
-from settings.settings import Settings  # type: ignore
 
 
 class PlaylistUIManager:
@@ -90,7 +91,7 @@ class PlaylistUIManager:
             self.main_window, "Import Playlist", "", "JSON Files (*.json)"
         )
         if file_path:
-            playlist = self.playlist_manager.load_playlist(file_path)
+            playlist = Playlist.load_playlist(file_path)
             if playlist:
                 self.add_playlist_with_manager(playlist)
                 logger.info(f"Imported playlist: {playlist.name}")
@@ -106,7 +107,7 @@ class PlaylistUIManager:
                 self.main_window, "Export Playlist", "", "JSON Files (*.json)"
             )
             if file_path:
-                self.playlist_manager.save_playlist(playlist, file_path)
+                Playlist.save_playlist(playlist, file_path)
                 logger.info(f"Exported playlist: {playlist.name}")
 
     def add_playlist_with_manager(self, playlist: Playlist) -> None:
@@ -129,5 +130,7 @@ class PlaylistUIManager:
         current_index = self.tab_widget.currentIndex()
         if current_index != -1:
             playlist = self.playlist_manager.playlists[current_index]
-            self.main_window.player_control_manager.play_song_from_index(index, playlist)  # type: ignore
+            self.main_window.player_control_manager.play_song_from_index(
+                index, playlist
+            )
             tree_view.set_currently_playing_row(index)
