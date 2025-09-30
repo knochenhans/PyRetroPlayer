@@ -60,9 +60,11 @@ class FileManager:
 
         id = self.main_window.song_library.add_song(song)
 
-        current_index = self.main_window.tab_widget.currentIndex()
+        current_index = self.main_window.playlist_ui_manager.tab_widget.currentIndex()
         if current_index != -1:
-            playlist = self.main_window.playlist_manager.playlists[current_index]
+            playlist = self.main_window.playlist_ui_manager.playlist_manager.playlists[
+                current_index
+            ]
             playlist.add_song(id)
 
         self.files_remaining -= 1
@@ -86,9 +88,15 @@ class FileManager:
         for song in songs:
             id = song.id
 
-            current_index = self.main_window.tab_widget.currentIndex()
+            current_index = (
+                self.main_window.playlist_ui_manager.tab_widget.currentIndex()
+            )
             if current_index != -1:
-                playlist = self.main_window.playlist_manager.playlists[current_index]
+                playlist = (
+                    self.main_window.playlist_ui_manager.playlist_manager.playlists[
+                        current_index
+                    ]
+                )
                 playlist.add_song(id)
 
         # self.main_window.update_playlist_view()
@@ -101,9 +109,15 @@ class FileManager:
             "All Files (*);;Audio Files (*.mp3 *.wav *.flac)",
         )
         if file_paths:
-            current_index = self.main_window.tab_widget.currentIndex()
+            current_index = (
+                self.main_window.playlist_ui_manager.tab_widget.currentIndex()
+            )
             if current_index != -1:
-                playlist = self.main_window.playlist_manager.playlists[current_index]
+                playlist = (
+                    self.main_window.playlist_ui_manager.playlist_manager.playlists[
+                        current_index
+                    ]
+                )
                 self.load_files(file_paths, playlist)
 
     def add_folder(self) -> None:
@@ -111,8 +125,14 @@ class FileManager:
             self.main_window, "Add Folder", ""
         )
         if folder_path:
-            current_index = self.main_window.tab_widget.currentIndex()
+            current_index = (
+                self.main_window.playlist_ui_manager.tab_widget.currentIndex()
+            )
             if current_index != -1:
-                playlist = self.main_window.playlist_manager.playlists[current_index]
+                playlist = (
+                    self.main_window.playlist_ui_manager.playlist_manager.playlists[
+                        current_index
+                    ]
+                )
                 file_paths = [folder_path]
                 self.load_files(file_paths, playlist)

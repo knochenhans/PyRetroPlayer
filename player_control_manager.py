@@ -17,7 +17,7 @@ class PlayerControlManager:
         self.main_window = main_window
         self.player_backend = main_window.player_backends["FakeBackend"]()
         self.state = self.PlayerState.STOPPED
-        self.player_thread = None
+        self.player_thread = None  # Changed: initialize as None
         self.queue_manager = QueueManager(history_playlist=Playlist(name="History"))
 
     def set_player_state(self, new_state: "PlayerControlManager.PlayerState") -> None:
@@ -31,8 +31,7 @@ class PlayerControlManager:
                     on_position_changed=self.on_position_changed,
                     on_song_finished=self.on_song_finished,
                 )
-                if self.player_thread:
-                    self.player_thread.start()
+                self.player_thread.start()
             case (self.PlayerState.PAUSED, self.PlayerState.PLAYING):
                 if self.player_thread:
                     self.player_thread.pause()
@@ -45,6 +44,7 @@ class PlayerControlManager:
             ):
                 if self.player_thread:
                     self.player_thread.stop()
+                    self.player_thread.join()  # Ensure thread is cleaned up
                     self.player_thread = None
             case _:
                 logger.warning(

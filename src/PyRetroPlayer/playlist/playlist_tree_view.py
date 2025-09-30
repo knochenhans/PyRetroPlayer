@@ -165,7 +165,18 @@ class PlaylistTreeView(QTreeView):
                 case "file_path":
                     row_data[col_id] = song.file_path
                 case "duration":
-                    row_data[col_id] = str(song.duration)
+                    if not song.duration:
+                        row_data[col_id] = "0:00"
+                        continue
+                    seconds = int(song.duration // 1000)
+                    minutes = seconds // 60
+                    hours = minutes // 60
+                    seconds = seconds % 60
+                    minutes = minutes % 60
+                    if hours > 0:
+                        row_data[col_id] = f"{hours}:{minutes:02}:{seconds:02}"
+                    else:
+                        row_data[col_id] = f"{minutes}:{seconds:02}"
                 case "backend_name":
                     row_data[col_id] = song.backend_name or ""
                 case _:

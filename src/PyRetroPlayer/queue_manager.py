@@ -33,7 +33,7 @@ class QueueManager:
             song = self.queue.popleft()
 
             # Add song to history playlist
-            self.history_playlist.add_song(song)
+            self.history_playlist.add_song(song.id)
             self.history_playlist.current_song_index += 1
 
             if len(self.queue) > 0:

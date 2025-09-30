@@ -102,3 +102,9 @@ class UIManager:
         self.add_menu_action(
             library_menu, "&Clear Song Library", self.main_window.clear_song_library
         )
+
+    def update_progress_bar(self, current_position: int, module_length: int) -> None:
+        if module_length > 0:
+            self.main_window.progress_slider.setMaximum(module_length)
+            self.main_window.progress_slider.setValue(current_position)
+            # self.progress_bar.update()

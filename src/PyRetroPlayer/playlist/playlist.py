@@ -19,6 +19,7 @@ class Playlist:
         self.song_ids = song_ids or []
         self.song_added: Optional[Callable[[str], None]] = None
         self.song_removed: Optional[Callable[[str], None]] = None
+        self.current_song_index: int = -1
 
     def add_song(self, song_id: str) -> None:
         self.song_ids.append(song_id)
@@ -89,3 +90,9 @@ class Playlist:
             logger.info(f"Playlist order updated: {self.song_ids}")
         except IndexError as e:
             logger.error(f"Invalid index in order list: {e}")
+
+    def get_song_id_by_index(self, index: int) -> Optional[str]:
+        if 0 <= index < len(self.song_ids):
+            return self.song_ids[index]
+        logger.warning(f"Index out of range: {index}")
+        return None

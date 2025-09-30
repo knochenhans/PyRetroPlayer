@@ -70,9 +70,14 @@ class PlaylistUIManager:
         playlist.name = playlist.name or ""
         self.tab_widget.addTab(playlist_view, playlist.name)
         self.column_managers[playlist.id] = column_manager
+        playlist_view.item_double_clicked.connect(
+            lambda index: self.main_window.player_control_manager.play_song_from_index(  # type: ignore
+                index, playlist
+            )
+        )
 
         playlist_view.files_dropped.connect(
-            lambda file_paths: self.main_window.file_manager.load_files(
+            lambda file_paths: self.main_window.file_manager.load_files(  # type: ignore
                 file_paths, playlist
             )
         )

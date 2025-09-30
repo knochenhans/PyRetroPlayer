@@ -48,6 +48,13 @@ class MainWindow(QMainWindow):
 
         self.song_library = SongLibrary(os.path.join(self.data_dir, "song_library.db"))
 
+        self.player_backends: Dict[str, Any] = {
+            "FakeBackend": lambda: FakePlayerBackend()
+        }
+
+        self.audio_backends: Dict[str, Any] = {"PyAudio": lambda: AudioBackendPyAudio()}
+        self.audio_backend = self.audio_backends["PyAudio"]()
+
         from player_control_manager import PlayerControlManager  # type: ignore
 
         self.player_control_manager = PlayerControlManager(self)
@@ -67,13 +74,6 @@ class MainWindow(QMainWindow):
         self.playlist_ui_manager = PlaylistUIManager(self)
 
         self.ui_manager.create_menu_bar()
-
-        self.player_backends: Dict[str, Any] = {
-            "FakeBackend": lambda: FakePlayerBackend()
-        }
-
-        self.audio_backends: Dict[str, Any] = {"PyAudio": lambda: AudioBackendPyAudio()}
-        self.audio_backend = self.audio_backends["PyAudio"]()
 
         self.icon_bar = QToolBar("Main Toolbar", self)
         self.addToolBar(self.icon_bar)
@@ -121,14 +121,14 @@ class MainWindow(QMainWindow):
         self.icon_bar.addSeparator()
 
         # Add volume slider
-        progress_slider = QSlider(Qt.Orientation.Horizontal)
-        progress_slider.setRange(0, 100)
-        progress_slider.setValue(0)
-        progress_slider.setToolTip("Playback Progress")
+        self.progress_slider = QSlider(Qt.Orientation.Horizontal)
+        self.progress_slider.setRange(0, 100)
+        self.progress_slider.setValue(0)
+        self.progress_slider.setToolTip("Playback Progress")
         # progress_slider.valueChanged.connect(self.on_progress_changed)
-        self.icon_bar.addWidget(progress_slider)
+        self.icon_bar.addWidget(self.progress_slider)
 
-        progress_slider.sliderMoved.connect(self.player_control_manager.on_seek)
+        self.progress_slider.sliderMoved.connect(self.player_control_manager.on_seek)
 
         self.icon_bar.addSeparator()
 

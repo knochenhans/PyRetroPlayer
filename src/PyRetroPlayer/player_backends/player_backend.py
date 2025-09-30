@@ -1,5 +1,6 @@
 import hashlib
 from typing import Any, Callable, Optional
+from venv import logger
 
 from playlist.song import Song  # type: ignore
 
@@ -10,8 +11,15 @@ class PlayerBackend:
         self.mod: Any = None
         self.name: str = name
         self.current_subsong: int = 0
+        self.current_position: int = 0
         self.subsong_changed_callback: Optional[Callable[[int, int], None]] = None
         self.song_name_changed_callback: Optional[Callable[[str], None]] = None
+
+    def load_song(self, song: Song) -> None:
+        self.song = song
+        self.current_subsong = 0
+        logger.info(f"Loaded song: {song.title} using backend: {self.name}")
+        self.prepare_playing()
 
     def set_subsong_changed_callback(
         self, callback: Callable[[int, int], None]
@@ -30,14 +38,14 @@ class PlayerBackend:
     def retrieve_song_info(self) -> None:
         pass
 
-    def get_module_length(self) -> float:
-        return 0.0
+    def get_module_length(self) -> int:
+        return 0
 
     def read_chunk(self, samplerate: int, buffersize: int) -> tuple[int, bytes]:
         return 0, b""
 
-    def get_position_seconds(self) -> float:
-        return 0.0
+    def get_position_milliseconds(self) -> int:
+        return 0
 
     def get_current_subsong(self) -> int:
         return self.current_subsong
