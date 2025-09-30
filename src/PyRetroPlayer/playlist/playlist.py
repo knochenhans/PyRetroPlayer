@@ -120,3 +120,11 @@ class Playlist:
             return self.entries[index].song_id
         logger.warning(f"Index out of range: {index}")
         return None
+
+    def get_entries_from_index(
+        self, start_index: int, num_entries: int
+    ) -> List[PlaylistEntry]:
+        if 0 <= start_index < len(self.entries):
+            return self.entries[start_index : start_index + num_entries]
+        logger.warning(f"Start index out of range: {start_index}")
+        return []

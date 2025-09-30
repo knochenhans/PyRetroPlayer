@@ -5,6 +5,7 @@ from types import TracebackType
 from typing import List, Optional
 
 from loguru import logger
+
 from playlist.song import Song  # type: ignore
 
 
@@ -105,6 +106,37 @@ class SongLibrary:
                     ),  # Deserialize JSON
                 )
             return None
+
+    def get_songs(self, song_ids: List[str]) -> List[Song]:
+        if not song_ids:
+            return []
+        placeholders = ",".join("?" for _ in song_ids)
+        query = f"SELECT * FROM songs WHERE id IN ({placeholders})"
+        with self.conn as conn:
+            cur = conn.cursor()
+            cur.execute(query, song_ids)
+            rows = cur.fetchall()
+            # Map id to Song
+            song_map = {
+                row["id"]: Song(
+                    id=row["id"],
+                    file_path=row["file_path"],
+                    title=row["title"],
+                    artist=row["artist"],
+                    duration=row["duration"],
+                    backend_name=row["backend_name"],
+                    md5=row["md5"],
+                    sha1=row["sha1"],
+                    custom_metadata=(
+                        json.loads(row["custom_metadata"])
+                        if row["custom_metadata"]
+                        else {}
+                    ),
+                )
+                for row in rows
+            }
+            # Return songs in input order
+            return [song_map[sid] for sid in song_ids if sid in song_map]
 
     def get_all_songs(self) -> List[Song]:
         with self.conn as conn:

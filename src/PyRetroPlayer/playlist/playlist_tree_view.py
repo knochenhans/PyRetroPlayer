@@ -270,6 +270,14 @@ class PlaylistTreeView(QTreeView):
         self._set_play_status(row, True)
         self.previous_row = row
 
+    def set_currently_playing_entry_id(self, entry_id: str) -> None:
+        for row in range(self.source_model.rowCount()):
+            item = self.source_model.item(row, 0)  # Assuming entry_id is in column 0
+            if item and item.text() == entry_id:
+                self.set_currently_playing_row(row)
+                return
+        logger.warning(f"Entry ID {entry_id} not found in playlist view")
+
     def get_current_item(self) -> Optional[QStandardItem]:
         index = self.currentIndex()
         if index.isValid():
@@ -320,11 +328,3 @@ class PlaylistTreeView(QTreeView):
             logger.warning(
                 f"Song ID {entry.song_id} not found in library; cannot remove."
             )
-
-    # def hide_invisible_columns(self) -> None:
-    #     for i, column_id in enumerate(self.column_manager.columns):
-    #         hidden = not self.column_manager.is_column_visible(column_id)
-    #         self.setColumnHidden(i, hidden)
-    #         logger.debug(f"{'Hiding' if hidden else 'Showing'} column: {column_id}")
-    #         self.setColumnHidden(i, hidden)
-    #         logger.debug(f"{'Hiding' if hidden else 'Showing'} column: {column_id}")
