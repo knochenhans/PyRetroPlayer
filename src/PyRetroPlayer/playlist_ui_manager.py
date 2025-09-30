@@ -71,9 +71,7 @@ class PlaylistUIManager:
         self.tab_widget.addTab(playlist_view, playlist.name)
         self.column_managers[playlist.id] = column_manager
         playlist_view.item_double_clicked.connect(
-            lambda index: self.main_window.player_control_manager.play_song_from_index(  # type: ignore
-                index, playlist
-            )
+            lambda index: self.on_playlist_item_double_clicked(index, playlist_view)
         )
 
         playlist_view.files_dropped.connect(
@@ -124,3 +122,12 @@ class PlaylistUIManager:
         if os.path.exists(config_path):
             return ColumnManager.load_from_json(config_path)
         return ColumnManager(self.column_default_definitions)
+
+    def on_playlist_item_double_clicked(
+        self, index: int, tree_view: PlaylistTreeView
+    ) -> None:
+        current_index = self.tab_widget.currentIndex()
+        if current_index != -1:
+            playlist = self.playlist_manager.playlists[current_index]
+            self.main_window.player_control_manager.play_song_from_index(index, playlist)  # type: ignore
+            tree_view.set_currently_playing_row(index)

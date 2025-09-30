@@ -52,6 +52,9 @@ class PlayerControlManager:
                 )
         self.state = new_state
 
+        # if new_state == self.PlayerState.PLAYING:
+        #     self.main_window.playlist_ui_manager.
+
     def on_play_pressed(self) -> None:
         self.set_player_state(self.PlayerState.PLAYING)
 
@@ -98,3 +101,4 @@ class PlayerControlManager:
 
         self.player_backend.load_song(song)
         self.set_player_state(self.PlayerState.PLAYING)
+

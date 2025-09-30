@@ -87,6 +87,8 @@ class PlaylistTreeView(QTreeView):
         self.song_library = song_library
         self.actions_ = actions
 
+        self.previous_row = -1
+
         self.setSelectionBehavior(QTreeView.SelectionBehavior.SelectRows)
         self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
@@ -237,16 +239,18 @@ class PlaylistTreeView(QTreeView):
             super().dropEvent(event)
 
     def _set_play_status(self, row: int, enable: bool) -> None:
-        column = self.source_model.itemFromIndex(self.model().index(row, 0))
+        item = self.source_model.item(row, 1)
 
-        if column:
-            column.setData(
-                QIcon.fromTheme("media-playback-start"),
-                Qt.ItemDataRole.DecorationRole,
-            )
+        if item:
+            if enable:
+                item.setIcon(QIcon.fromTheme("media-playback-start"))
+            else:
+                item.clearData()
+            self.viewport().update()
 
     def set_currently_playing_row(self, row: int) -> None:
-        self._set_play_status(self.previous_row, False)
+        if self.previous_row != -1:
+            self._set_play_status(self.previous_row, False)
         self._set_play_status(row, True)
         self.previous_row = row
 
