@@ -42,8 +42,8 @@
         "visible": true
     },
     {
-        "id": "backend_name",
-        "name": "Backend",
+        "id": "available_backends",
+        "name": "Available backends",
         "width": 100,
         "visible": true
     },

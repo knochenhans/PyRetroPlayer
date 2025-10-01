@@ -1,11 +1,13 @@
+import threading
 import weakref
-from typing import Callable, List, Optional
+from concurrent.futures import ThreadPoolExecutor
+from typing import Callable, Dict, List, Optional
 
+from loaders.abstract_loader import AbstractLoader  # type: ignore
 from loguru import logger
-from PySide6.QtCore import QMutex, QMutexLocker, QObject, QRunnable, QThreadPool, Signal
+from player_backends.player_backend import PlayerBackend  # type: ignore
 
-from player_backends.player_backend import PlayerBackend
-from playlist.song import Song
+from playlist.song import Song  # type: ignore
 
 
 class SongEmitter:
@@ -20,51 +22,75 @@ class SongEmitter:
 
 class ModuleTester:
     def __init__(
-        self, song: Song, backends: dict[str, type[PlayerBackend]], emitter: SongEmitter
+        self,
+        song: Song,
+        player_backends: Dict[str, Callable[[], PlayerBackend]],
+        player_backends_priority: List[str],
+        emitter: SongEmitter,
     ):
         self.song = song
-        self.backends = backends
+        self.player_backends = player_backends
+        self.player_backends_priority = player_backends_priority
         self.emitter = emitter
 
     def test_backends(self) -> None:
-        for backend_name, backend_class in self.backends.items():
+        # Sort backends by priority, fallback to others
+        sorted_backend_names = [
+            name
+            for name in self.player_backends_priority
+            if name in self.player_backends
+        ]
+        sorted_backend_names += [
+            name for name in self.player_backends if name not in sorted_backend_names
+        ]
+        self.song.available_backends = []
+        info_retrieved = False
+        for backend_name in sorted_backend_names:
+            backend_factory = self.player_backends[backend_name]
             logger.debug(f"Trying player backend: {backend_name}")
 
-            player_backend = backend_class(backend_name)
+            player_backend = backend_factory()
             player_backend.song = self.song
             if player_backend.check_module():
-                logger.debug(f"Module loaded with player backend: {backend_name}")
-
-                self.song.backend_name = backend_name
-
-                player_backend.song = self.song
-                player_backend.retrieve_song_info()
-                self.song = player_backend.song
-                self.emitter.song_info_retrieved(self.song)
+                self.song.available_backends.append(backend_name)
+                if not info_retrieved:
+                    player_backend.retrieve_song_info()
+                    self.song = player_backend.song
+                    self.emitter.song_info_retrieved(self.song)
+                    info_retrieved = True
                 player_backend.cleanup()
-                player_backend = None
-                break
+        if not self.song.available_backends:
+            self.song.available_backends = []
+            logger.warning(
+                f"No available backends found for song: {self.song.file_path}, song cannot be played."
+            )
         self.emitter.song_checked(self.song)
 
 
-class LocalFileLoaderWorker(QRunnable):
+class LocalFileLoaderWorker:
     def __init__(
         self,
         song: Song,
-        backends: dict[str, type[PlayerBackend]],
+        player_backends: Dict[str, Callable[[], PlayerBackend]],
+        player_backends_priority: List[str],
         loader: "LocalFileLoader",
     ) -> None:
-        super().__init__()
         self.song: Song = song
-        self.player_backends: dict[str, type[PlayerBackend]] = backends
+        self.player_backends: Dict[str, Callable[[], PlayerBackend]] = player_backends
+        self.player_backends_priority: List[str] = player_backends_priority
         self.loader = weakref.ref(loader)
         self.emitter = SongEmitter(
             self.song_checked_callback, self.song_info_retrieved_callback
         )
 
-    def run(self) -> None:
+    def __call__(self) -> None:
         if self.song:
-            tester = ModuleTester(self.song, self.player_backends, self.emitter)
+            tester = ModuleTester(
+                self.song,
+                self.player_backends,
+                self.player_backends_priority,
+                self.emitter,
+            )
             tester.test_backends()
             loader = self.loader()
             if loader:
@@ -72,51 +98,63 @@ class LocalFileLoaderWorker(QRunnable):
 
     def song_checked_callback(self, song: Song) -> None:
         loader = self.loader()
-        if loader:
-            loader.song_loaded.emit(song)
+        if loader and loader.song_loaded_callback:
+            loader.song_loaded_callback(song)
 
     def song_info_retrieved_callback(self, song: Song) -> None:
         loader = self.loader()
-        if loader:
-            loader.song_info_retrieved.emit(song)
+        if loader and loader.song_info_retrieved_callback:
+            loader.song_info_retrieved_callback(song)
 
 
-class LocalFileLoader(QObject):
-    song_loaded = Signal(Song)
-    song_info_retrieved = Signal(Song)
-    all_songs_loaded = Signal()
-
+class LocalFileLoader(AbstractLoader):
     def __init__(
-        self, file_list: List[str], player_backends: dict[str, type[PlayerBackend]]
+        self,
+        player_backends: Dict[str, Callable[[], PlayerBackend]],
+        player_backends_priority: List[str],
     ) -> None:
-        super().__init__()
-        self.file_list = file_list
-        self.player_backends = player_backends
-        self.thread_pool = QThreadPool()
-        self.thread_pool.setMaxThreadCount(
-            1
-        )  # Limit to 1 thread for now to avoid sorting issues
-        self.songs_to_load = len(file_list)
-        self.songs_loaded = 0
-        self.mutex = QMutex()
+        super().__init__(player_backends, player_backends_priority)
 
-    def load_module(self, filename: str) -> Optional[Song]:
-        if filename:
+        max_workers = min(4, (threading.active_count() or 1) + 4)
+        self.loading_thread: Optional[threading.Thread] = None
+        self.executor = ThreadPoolExecutor(max_workers=max_workers)
+        self.mutex = threading.Lock()
+
+    def reset(self) -> None:
+        self.loading_thread = None
+        return super().reset()
+
+    def start_loading(self) -> None:
+        self.loading_thread = threading.Thread(target=self.load_songs)
+        self.loading_thread.start()
+
+    def load_songs(self) -> None:
+        for file_name in self.file_list:
+            song = self.load_song(file_name)
+            if song:
+                worker = LocalFileLoaderWorker(
+                    song, self.player_backends, self.player_backends_priority, self
+                )
+                self.executor.submit(worker)
+
+    def load_song(self, file_path: str) -> Optional[Song]:
+        logger.debug(f"LocalFileLoader: Loading file: {file_path}")
+
+        if file_path:
             song: Song = Song()
-            song.file_path = filename
+            song.file_path = file_path
             song.is_ready = True
             return song
         return None
 
-    def load_songs(self) -> None:
-        for file_name in self.file_list:
-            song = self.load_module(file_name)
-            if song:
-                worker = LocalFileLoaderWorker(song, self.player_backends, self)
-                self.thread_pool.start(worker)
+    def update_song_info(self, song: Song) -> Optional[Song]:
+        logger.debug(f"LocalFileLoader: Retrieving filename for song: {song.file_path}")
+        song.title = song.file_path.split("/")[-1]  # Extract filename as the title
+        return song
 
     def song_finished_loading(self) -> None:
-        with QMutexLocker(self.mutex):
+        with self.mutex:
             self.songs_loaded += 1
             if self.songs_loaded == self.songs_to_load:
-                self.all_songs_loaded.emit()
+                if self.all_songs_loaded_callback:
+                    self.all_songs_loaded_callback()

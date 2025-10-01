@@ -7,6 +7,8 @@ from audio_backends.pyaudio.audio_backend_pyuadio import (  # type: ignore
     AudioBackendPyAudio,
 )
 from player_backends.fake_player_backend import FakePlayerBackend  # type: ignore
+from player_backends.libuade.player_backend_libuade import PlayerBackendLibUADE  # type: ignore
+from player_backends.libopenmpt.player_backend_libopenmpt import PlayerBackendLibOpenMPT  # type: ignore
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QCloseEvent  # type: ignore
 from PySide6.QtWidgets import (
@@ -50,8 +52,15 @@ class MainWindow(QMainWindow):
         self.song_library = SongLibrary(os.path.join(self.data_dir, "song_library.db"))
 
         self.player_backends: Dict[str, Any] = {
-            "FakeBackend": lambda: FakePlayerBackend()
+            "LibUADE": lambda: PlayerBackendLibUADE(),
+            # "FakeBackend": lambda: FakePlayerBackend(),
+            "LibOpenMPT": lambda: PlayerBackendLibOpenMPT(),
         }
+        self.player_backends_priorities: List[str] = [
+            "LibUADE",
+            "LibOpenMPT",
+            # "FakeBackend",
+        ]
 
         self.audio_backends: Dict[str, Any] = {"PyAudio": lambda: AudioBackendPyAudio()}
         self.audio_backend = self.audio_backends["PyAudio"]()
@@ -62,7 +71,7 @@ class MainWindow(QMainWindow):
 
         from actions_manager import ActionsManager  # type: ignore
 
-        self.actions_: List[QAction] = ActionsManager.get_actions_by_names(
+        self.actions_: List[QAction] = ActionsManager.get_actions_by_names(  # type: ignore
             self.player_control_manager, ["play", "pause", "stop", "previous", "next"]
         )
 

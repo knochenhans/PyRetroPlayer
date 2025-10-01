@@ -3,13 +3,15 @@ from typing import List, Optional
 from loaders.abstract_loader import AbstractLoader  # type: ignore
 from loaders.fake_loader import FakeLoader  # type: ignore
 from loaders.file_fetcher import FileFetcher  # type: ignore
+from loaders.local_file_loader import LocalFileLoader  # type: ignore
 from loguru import logger
 from main_window import MainWindow  # type: ignore
-from playlist.playlist import Playlist  # type: ignore
-from playlist.song import Song  # type: ignore
 from PySide6.QtWidgets import (
     QFileDialog,
 )
+
+from playlist.playlist import Playlist  # type: ignore
+from playlist.song import Song  # type: ignore
 
 
 class FileManager:
@@ -19,10 +21,7 @@ class FileManager:
         self.total_files = 0
         self.files_remaining = 0
 
-        self.loaders: List[type[AbstractLoader]] = [FakeLoader]
-
-        # Sort loaders by priority (higher priority first)
-        self.loaders.sort(key=lambda loader: loader.priority, reverse=True)
+        self.loaders: List[type[AbstractLoader]] = [LocalFileLoader, FakeLoader]
 
     def load_files(self, file_paths: List[str], playlist: Playlist) -> None:
         file_fetcher = FileFetcher()
@@ -34,14 +33,16 @@ class FileManager:
         self.files_remaining = self.total_files
         self.main_window.ui_manager.progress_bar.setMaximum(self.total_files)
 
-        for loader_class in self.loaders:
-            loader_instance = loader_class(
-                player_backends=self.main_window.player_backends
-            )
-            if all(loader_instance.try_loading_song(file) for file in file_list):
-                self.file_loader = loader_instance
-                logger.info(f"Using loader: {loader_class.__name__}")
-                break
+        # for loader_class in self.loaders:
+        # if all(loader_instance.try_loading_song(file) for file in file_list):
+        #     self.file_loader = loader_instance
+        #     logger.info(f"Using loader: {loader_class.__name__}")
+        #     break
+        loader_instance = self.loaders[0](
+            player_backends=self.main_window.player_backends,
+            player_backends_priority=self.main_window.player_backends_priorities,
+        )
+        self.file_loader = loader_instance
 
         if self.file_loader:
             self.file_loader.set_file_list(file_list)

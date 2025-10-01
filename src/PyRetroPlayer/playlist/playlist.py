@@ -29,6 +29,11 @@ class Playlist:
         if self.song_added:
             self.song_added(entry)
 
+    def add_entry(self, entry: PlaylistEntry) -> None:
+        self.entries.append(entry)
+        if self.song_added:
+            self.song_added(entry)
+
     def remove_song(self, song_id: str) -> None:
         removed_entry = None
         new_entries: List[PlaylistEntry] = []
@@ -134,8 +139,8 @@ class Playlist:
         return None
 
     def get_entries_from_index(
-        self, start_index: int, num_entries: int
+        self, start_index: int, count: int
     ) -> List[PlaylistEntry]:
         if 0 <= start_index < len(self.entries):
-            return self.entries[start_index : start_index + num_entries]
+            return self.entries[start_index : start_index + count]
         return []

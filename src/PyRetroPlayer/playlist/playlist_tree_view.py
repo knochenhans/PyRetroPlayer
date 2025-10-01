@@ -194,8 +194,12 @@ class PlaylistTreeView(QTreeView):
                         row_data[col_id] = f"{hours}:{minutes:02}:{seconds:02}"
                     else:
                         row_data[col_id] = f"{minutes}:{seconds:02}"
-                case "backend_name":
-                    row_data[col_id] = song.backend_name or ""
+                case "available_backends":
+                    row_data[col_id] = (
+                        ", ".join(song.available_backends)
+                        if song.available_backends
+                        else ""
+                    )
                 case _:
                     custom_metadata = song.custom_metadata or {}
                     row_data[col_id] = custom_metadata.get(col_id, "")
@@ -277,7 +281,10 @@ class PlaylistTreeView(QTreeView):
         self._set_play_status(row, True)
         self.previous_row = row
 
-    def set_currently_playing_entry(self, entry: PlaylistEntry) -> None:
+    def set_currently_playing_entry(self, entry: Optional[PlaylistEntry]) -> None:
+        if entry is None:
+            return
+
         for row in range(self.source_model.rowCount()):
             item = self.source_model.item(
                 row, self.column_manager.get_column_index("entry_id")

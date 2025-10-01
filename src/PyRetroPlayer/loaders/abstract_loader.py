@@ -6,11 +6,17 @@ from playlist.song import Song  # type: ignore
 
 
 class AbstractLoader:
-    priority: int = 0
-
-    def __init__(self, player_backends: Dict[str, Callable[[], PlayerBackend]]) -> None:
+    def __init__(
+        self,
+        player_backends: Dict[str, Callable[[], PlayerBackend]],
+        player_backends_priority: List[str],
+    ) -> None:
         self.player_backends = player_backends
+        self.player_backends_priority = player_backends_priority
         self.song_loaded_callback: Optional[Callable[[Optional[Song]], None]] = None
+        self.song_info_retrieved_callback: Optional[
+            Callable[[Optional[Song]], None]
+        ] = None
         self.all_songs_loaded_callback: Optional[Callable[[], None]] = None
 
         self.reset()
@@ -44,7 +50,7 @@ class AbstractLoader:
             logger.error(f"File not found or unreadable: {file_path}, error: {e}")
             return False
         return True
-    
+
     def start_loading(self) -> None:
         if not self.file_list:
             logger.warning("No files to load.")
@@ -72,14 +78,19 @@ class AbstractLoader:
             player_backend.song = song
             if player_backend.check_module():
                 logger.debug(f"Module loaded with player backend: {backend_name}")
-                song.backend_name = backend_name
+                song.available_backends = backend_name
                 player_backend.song = song
                 player_backend.retrieve_song_info()
                 return player_backend.song
         return None
-    
+
     def all_songs_loaded(self) -> None:
         logger.info("All songs have been loaded.")
-        
+
         if self.all_songs_loaded_callback:
-            self.all_songs_loaded_callback()
+            self.all_songs_loaded_callback()  #
+
+    def song_finished_loading(self) -> None:
+        self.songs_loaded += 1
+        if self.songs_loaded >= self.songs_to_load:
+            self.all_songs_loaded()

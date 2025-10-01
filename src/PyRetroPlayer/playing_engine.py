@@ -90,8 +90,8 @@ class PlayingEngine(QObject):
                     raise ValueError("Module entry does not contain a filename")
 
                 # Create player backend from backend name in song info
-                self.player_backend = self.player_backends[song.backend_name](
-                    song.backend_name
+                self.player_backend = self.player_backends[song.available_backends](
+                    song.available_backends
                 )
 
                 if self.player_backend is not None and self.audio_backend is not None:

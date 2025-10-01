@@ -22,7 +22,7 @@ def main(db_path: str):
             print(f"Album: {getattr(song, 'album', 'N/A')}")
             print(f"Duration: {song.duration}")
             print(f"File: {song.file_path}")
-            print(f"Backend: {song.backend_name}")
+            print(f"Backend: {song.available_backends}")
             print(f"MD5: {song.md5}")
             print(f"SHA1: {song.sha1}")
             print(f"Custom Metadata: {song.custom_metadata}")

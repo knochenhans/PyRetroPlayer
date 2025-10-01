@@ -22,7 +22,7 @@ class SongLibrary:
                     title TEXT,
                     artist TEXT,
                     duration INTEGER,
-                    backend_name TEXT,
+                    available_backends TEXT,
                     md5 TEXT,
                     sha1 TEXT,
                     custom_metadata TEXT
@@ -58,7 +58,7 @@ class SongLibrary:
             cur.execute(
                 """
                 INSERT INTO songs (
-                    id, file_path, title, artist, duration, backend_name, md5, sha1, custom_metadata
+                    id, file_path, title, artist, duration, available_backends, md5, sha1, custom_metadata
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
@@ -67,7 +67,7 @@ class SongLibrary:
                     song.title,
                     song.artist,
                     song.duration,
-                    song.backend_name,
+                    json.dumps(song.available_backends),  # Serialize as JSON list
                     song.md5,
                     song.sha1,
                     json.dumps(
@@ -96,7 +96,7 @@ class SongLibrary:
                     title=row["title"],
                     artist=row["artist"],
                     duration=row["duration"],
-                    backend_name=row["backend_name"],
+                    available_backends=json.loads(row["available_backends"]) if row["available_backends"] else [],
                     md5=row["md5"],
                     sha1=row["sha1"],
                     custom_metadata=(
@@ -116,7 +116,6 @@ class SongLibrary:
             cur = conn.cursor()
             cur.execute(query, song_ids)
             rows = cur.fetchall()
-            # Map id to Song
             song_map = {
                 row["id"]: Song(
                     id=row["id"],
@@ -124,7 +123,7 @@ class SongLibrary:
                     title=row["title"],
                     artist=row["artist"],
                     duration=row["duration"],
-                    backend_name=row["backend_name"],
+                    available_backends=json.loads(row["available_backends"]) if row["available_backends"] else [],
                     md5=row["md5"],
                     sha1=row["sha1"],
                     custom_metadata=(
@@ -135,7 +134,6 @@ class SongLibrary:
                 )
                 for row in rows
             }
-            # Return songs in input order
             return [song_map[sid] for sid in song_ids if sid in song_map]
 
     def get_all_songs(self) -> List[Song]:
@@ -149,7 +147,7 @@ class SongLibrary:
                     title=row["title"],
                     artist=row["artist"],
                     duration=row["duration"],
-                    backend_name=row["backend_name"],
+                    available_backends=json.loads(row["available_backends"]) if row["available_backends"] else [],
                     md5=row["md5"],
                     sha1=row["sha1"],
                     custom_metadata=(

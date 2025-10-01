@@ -1,10 +1,11 @@
 import threading
 import time
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, Optional
 
 from loaders.abstract_loader import AbstractLoader  # type: ignore
 from loguru import logger
 from player_backends.player_backend import PlayerBackend  # type: ignore
+
 from playlist.song import Song  # type: ignore
 
 
@@ -42,7 +43,7 @@ class FakeLoader(AbstractLoader):
             song.file_path = file_path
             song.title = file_path.split("/")[-1]
             song.artist = "Unknown Artist"
-            song.backend_name = "FakeBackend"
+            song.available_backends = "FakeBackend"
             song.duration = 10000  # Fake duration of 10000 milliseconds
             song.is_ready = True
 

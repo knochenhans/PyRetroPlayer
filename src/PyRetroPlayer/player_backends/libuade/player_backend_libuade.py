@@ -1,7 +1,7 @@
 import ctypes
 
-from player_backends.libuade import songinfo
-from player_backends.libuade.ctypes_classes import (
+from player_backends.libuade import songinfo  # type: ignore
+from player_backends.libuade.ctypes_classes import (  # type: ignore
     UADE_BYTES_PER_FRAME,
     UADE_MAX_MESSAGE_SIZE,
     UADE_NOTIFICATION_TYPE,
@@ -16,17 +16,17 @@ from player_backends.libuade.ctypes_classes import (
     uade_state,
     uade_subsong_info,
 )
-from player_backends.libuade.ctypes_functions import libuade, libc
+from player_backends.libuade.ctypes_functions import libuade, libc  # type: ignore
 from loguru import logger
 
-from player_backends.player_backend import PlayerBackend
+from player_backends.player_backend import PlayerBackend  # type: ignore
 
 
 class PlayerBackendLibUADE(PlayerBackend):
     def __init__(self, name: str = "LibUADE") -> None:
         super().__init__(name)
-        self.state_ptr: ctypes._Pointer[uade_state] = libuade.uade_new_state(None)
-        self.config_ptr: ctypes._Pointer[uade_config] = libuade.uade_new_config()
+        self.state_ptr: ctypes._Pointer[uade_state] = libuade.uade_new_state(None)  # type: ignore
+        self.config_ptr: ctypes._Pointer[uade_config] = libuade.uade_new_config()  # type: ignore
         # self.config = ctypes.cast(libuade.uade_new_config(), ctypes.POINTER(uade_config))
 
         logger.debug("PlayerBackendUADE initialized")
@@ -37,11 +37,11 @@ class PlayerBackendLibUADE(PlayerBackend):
 
         self.module_size = ctypes.c_size_t()
         ret = libuade.uade_read_file(
-            ctypes.byref(self.module_size), str.encode(self.song.filename)
+            ctypes.byref(self.module_size), str.encode(self.song.file_path)
         )
 
         if not ret:
-            error_message = f"Could not read file {self.song.filename}"
+            error_message = f"Could not read file {self.song.file_path}"
             logger.error(error_message)
             return False
 
@@ -52,7 +52,7 @@ class PlayerBackendLibUADE(PlayerBackend):
         )
 
         if ret < 1:
-            logger.warning(f"LibUADE is unable to play {self.song.filename}")
+            logger.warning(f"LibUADE is unable to play {self.song.file_path}")
             return False
 
         return True
@@ -71,15 +71,17 @@ class PlayerBackendLibUADE(PlayerBackend):
 
         size = ctypes.c_size_t()
 
-        ret = libuade.uade_read_file(ctypes.byref(size), str.encode(self.song.filename))
+        ret = libuade.uade_read_file(
+            ctypes.byref(size), str.encode(self.song.file_path)
+        )
 
         if not ret:
-            raise ValueError(f"Can not read file {self.song.filename}")
+            raise ValueError(f"Can not read file {self.song.file_path}")
 
         libc.free(ret)
 
         match libuade.uade_play(
-            str.encode(self.song.filename), subsong_nr, self.state_ptr
+            str.encode(self.song.file_path), subsong_nr, self.state_ptr
         ):
             case -1:
                 # Fatal error
@@ -95,6 +97,8 @@ class PlayerBackendLibUADE(PlayerBackend):
             #         rate=samplerate,
             #         output=True,
             #     )
+            case _:
+                pass
 
     def retrieve_song_info(self) -> None:
         if not self.song:
@@ -102,29 +106,37 @@ class PlayerBackendLibUADE(PlayerBackend):
 
         info = libuade.uade_get_song_info(self.state_ptr).contents
 
-        self.song.credits = songinfo.get_credits(self.song.filename)
-        self.song.formatname = info.formatname.decode("cp1251")
-        self.song.extensions = info.detectioninfo.ext.decode("cp1251")
-        self.song.modulebytes = info.modulebytes
         self.song.title = info.modulename.decode("cp1251")
+        self.song.custom_metadata = {
+            "credits": songinfo.get_credits(self.song.file_path),
+            "formatname": info.formatname.decode("cp1251"),
+            "extensions": info.detectioninfo.ext.decode("cp1251"),
+            "modulebytes": info.modulebytes,
+            "playername": info.playername.decode("cp1251"),
+            "playerfname": info.playerfname.decode("cp1251"),
+            "type": info.formatname.decode("cp1251"),
+        }
         # self.song.title = self.song.credits["song_title"]
         # self.song.md5 = info.modulemd5.decode("cp1251")
-        self.song.playerfname = info.playerfname.decode("cp1251")
-        self.song.playername = info.playername.decode("cp1251")
-        self.song.type = info.formatname.decode("cp1251")
         self.song.duration = int(self.get_module_length())
 
         subsongs: uade_subsong_info = info.subsongs
 
-        self.song.subsongs = subsongs.max
+        self.song.custom_metadata.get("subsongs", {})["current"] = subsongs.cur
+        self.song.custom_metadata.get("subsongs", {})["max"] = subsongs.max
 
-        self.song.message = "\n".join(
-            instrument["name"] for instrument in self.song.credits["instruments"]
-        )
+        self.song.custom_metadata["message"] = [
+            "\n".join(
+                instrument["name"]
+                for instrument in self.song.custom_metadata.get("credits", {}).get(
+                    "instruments", []
+                )
+            )
+        ]
 
         self.calculate_checksums()
 
-    def get_module_length(self) -> float:
+    def get_module_length(self) -> int:
         info = libuade.uade_get_song_info(self.state_ptr).contents
         bytes_per_second = UADE_BYTES_PER_FRAME * libuade.uade_get_sampling_rate(
             self.state_ptr
@@ -132,18 +144,20 @@ class PlayerBackendLibUADE(PlayerBackend):
         deciseconds = (info.subsongbytes * 10) // bytes_per_second
 
         if info.duration > 0:
-            return info.duration
+            # info.duration is in seconds, convert to milliseconds
+            return int(info.duration * 1000)
         else:
-            return deciseconds / 10.0
+            # deciseconds / 10.0 gives seconds, convert to milliseconds
+            return int((deciseconds / 10.0) * 1000)
 
-    def get_position_seconds(self) -> float:
+    def get_position_milliseconds(self) -> int:
         info = libuade.uade_get_song_info(self.state_ptr).contents
         bytes_per_second = UADE_BYTES_PER_FRAME * libuade.uade_get_sampling_rate(
             self.state_ptr
         )
         deciseconds = (info.subsongbytes * 10) // bytes_per_second
 
-        return deciseconds / 10.0
+        return int((deciseconds / 10.0) * 1000)
 
     def read_chunk(self, samplerate: int, buffersize: int) -> tuple[int, bytes]:
         # debugpy.debug_this_thread()
@@ -184,7 +198,9 @@ class PlayerBackendLibUADE(PlayerBackend):
             if n.uade_notification_union.song_end.happy:
                 # Subsong ended
                 self.current_subsong += 1
-                self.notify_subsong_changed(self.current_subsong, self.song.subsongs)
+                self.notify_subsong_changed(
+                    self.current_subsong, self.song.custom_metadata.get("subsongs", {})
+                )
                 logger.info("Sub song end")
                 return False
             else:
@@ -210,7 +226,7 @@ class PlayerBackendLibUADE(PlayerBackend):
             subsongs=si,
         )
         event = uade_event(type=0, uade_event_union=event_union)
-        e = libuade.uade_get_event(ctypes.byref(event), self.state_ptr)
+        _ = libuade.uade_get_event(ctypes.byref(event), self.state_ptr)
         logger.info("event type: {}", event.type)
         return event
 
