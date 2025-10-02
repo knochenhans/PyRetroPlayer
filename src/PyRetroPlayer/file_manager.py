@@ -33,11 +33,6 @@ class FileManager:
         self.files_remaining = self.total_files
         self.main_window.ui_manager.progress_bar.setMaximum(self.total_files)
 
-        # for loader_class in self.loaders:
-        # if all(loader_instance.try_loading_song(file) for file in file_list):
-        #     self.file_loader = loader_instance
-        #     logger.info(f"Using loader: {loader_class.__name__}")
-        #     break
         loader_instance = self.loaders[0](
             player_backends=self.main_window.player_backends,
             player_backends_priority=self.main_window.player_backends_priorities,

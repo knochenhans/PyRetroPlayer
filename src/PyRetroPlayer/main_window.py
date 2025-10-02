@@ -6,7 +6,6 @@ from appdirs import user_config_dir, user_data_dir  # type: ignore
 from audio_backends.pyaudio.audio_backend_pyuadio import (  # type: ignore
     AudioBackendPyAudio,
 )
-from player_backends.fake_player_backend import FakePlayerBackend  # type: ignore
 from player_backends.libuade.player_backend_libuade import PlayerBackendLibUADE  # type: ignore
 from player_backends.libopenmpt.player_backend_libopenmpt import PlayerBackendLibOpenMPT  # type: ignore
 from PySide6.QtCore import Qt, Signal
@@ -47,6 +46,8 @@ class MainWindow(QMainWindow):
         self.configuration.ensure_default_config()
         self.configuration.load()
 
+        self.actions_: List[QAction] = []
+
         self.setWindowTitle(f"{self.application_name} v{self.application_version}")
 
         self.song_library = SongLibrary(os.path.join(self.data_dir, "song_library.db"))
@@ -69,12 +70,6 @@ class MainWindow(QMainWindow):
 
         self.player_control_manager = PlayerControlManager(self)
 
-        from actions_manager import ActionsManager  # type: ignore
-
-        self.actions_: List[QAction] = ActionsManager.get_actions_by_names(  # type: ignore
-            self.player_control_manager, ["play", "pause", "stop", "previous", "next"]
-        )
-
         from file_manager import FileManager  # type: ignore
         from playlist_ui_manager import PlaylistUIManager  # type: ignore
         from ui_manager import UIManager  # type: ignore
@@ -82,6 +77,14 @@ class MainWindow(QMainWindow):
         self.ui_manager = UIManager(self)
         self.file_manager = FileManager(self)
         self.playlist_ui_manager = PlaylistUIManager(self)
+
+        from actions_manager import ActionsManager  # type: ignore
+
+        self.actions_: List[QAction] = ActionsManager.get_actions_by_names(  # type: ignore
+            self, ["play", "pause", "stop", "previous", "next"]
+        )
+
+        self.playlist_ui_manager.setup_actions()
 
         self.ui_manager.create_menu_bar()
 

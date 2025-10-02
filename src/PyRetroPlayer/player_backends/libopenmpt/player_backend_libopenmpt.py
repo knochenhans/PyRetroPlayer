@@ -69,12 +69,12 @@ class PlayerBackendLibOpenMPT(PlayerBackend):
         self.module_size = len(self.module_data)
 
         # Check if this extention is supported
-        extension = self.song.file_path.split(".")[-1].lower().encode()
-        if libopenmpt.openmpt_is_extension_supported(extension) == 0:  # type: ignore
-            logger.warning(
-                f"LibOpenMPT does not support the extension {extension.decode()}"
-            )
-            return False
+        # extension = self.song.file_path.split(".")[-1].lower().encode()
+        # if libopenmpt.openmpt_is_extension_supported(extension) == 0:  # type: ignore
+        #     logger.warning(
+        #         f"LibOpenMPT does not support the extension {extension.decode()}"
+        #     )
+        #     return False
 
         result = libopenmpt.openmpt_probe_file_header(  # type: ignore
             libopenmpt.OPENMPT_PROBE_FILE_HEADER_FLAGS_DEFAULT,  # int flags # type: ignore
@@ -183,8 +183,8 @@ class PlayerBackendLibOpenMPT(PlayerBackend):
             libopenmpt.openmpt_free_string(mod_err_str)  # type: ignore
         return frame_count, bytes(buffer)  # type: ignore
 
-    def get_position_seconds(self) -> float:
-        return libopenmpt.openmpt_module_get_position_seconds(self.mod)  # type: ignore
+    def get_position_milliseconds(self) -> int:
+        return int(libopenmpt.openmpt_module_get_position_seconds(self.mod) * 1000)  # type: ignore
 
     def get_module_title(self) -> Optional[str]:
         return libopenmpt.openmpt_module_get_metadata(self.mod, b"title")  # type: ignore

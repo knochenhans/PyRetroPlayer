@@ -7,7 +7,6 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import (
-    QAction,
     QDragEnterEvent,
     QDropEvent,
     QIcon,
@@ -31,6 +30,8 @@ from playlist.drag_drop_reorder_proxy import DragDropReorderProxy  # type: ignor
 from playlist.playlist import Playlist  # type: ignore
 from playlist.playlist_entry import PlaylistEntry  # type: ignore
 from playlist.playlist_item_model import PlaylistItemModel  # type: ignore
+from playlist.song import Song  # type: ignore
+from playlist.song_info_dialog import SongInfoDialog  # type: ignore
 from playlist.song_library import SongLibrary  # type: ignore
 
 
@@ -75,7 +76,6 @@ class PlaylistTreeView(QTreeView):
         column_manager: ColumnManager,
         default_columns_definitions: List[Dict[str, Any]],
         song_library: SongLibrary,
-        actions: List[QAction],
         parent: Optional[QWidget] = None,
     ):
         super().__init__(parent)
@@ -85,7 +85,6 @@ class PlaylistTreeView(QTreeView):
         self.column_manager = column_manager
         self.default_columns_definitions = default_columns_definitions
         self.song_library = song_library
-        self.actions_ = actions
 
         self.previous_row = -1
 
@@ -131,9 +130,6 @@ class PlaylistTreeView(QTreeView):
         playlist.song_added = self.on_entry_added
         playlist.song_removed = self.on_entry_removed
         playlist.song_playing = self.set_currently_playing_entry
-
-        for action in self.actions_:
-            self.addAction(action)
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key.Key_Delete:
@@ -300,6 +296,32 @@ class PlaylistTreeView(QTreeView):
             return self.source_model.itemFromIndex(index)
         return None
 
+    def get_current_index(self) -> Optional[int]:
+        index = self.currentIndex()
+        if index.isValid():
+            return index.row()
+        return None
+
+    def get_current_entry(self) -> Optional[PlaylistEntry]:
+        current_index = self.get_current_index()
+        if current_index is not None and 0 <= current_index < len(
+            self.playlist.entries
+        ):
+            return self.playlist.entries[current_index]
+        return None
+
+    def get_current_song_id(self) -> Optional[str]:
+        entry = self.get_current_entry()
+        if entry:
+            return entry.song_id
+        return None
+
+    def get_current_song(self) -> Optional[Song]:
+        song_id = self.get_current_song_id()
+        if song_id:
+            return self.song_library.get_song(song_id)
+        return None
+
     def get_column_widths(self) -> List[int]:
         column_widths: List[int] = []
         for i in range(self.model().columnCount()):
@@ -344,3 +366,9 @@ class PlaylistTreeView(QTreeView):
             logger.warning(
                 f"Song ID {entry.song_id} not found in library; cannot remove."
             )
+
+    def on_song_info_dialog(self) -> None:
+        current_song = self.get_current_song()
+        if current_song:
+            dialog = SongInfoDialog(current_song, self)
+            dialog.exec()

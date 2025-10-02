@@ -1,6 +1,7 @@
 import json
 import os
 import sqlite3
+import threading
 from types import TracebackType
 from typing import List, Optional
 
@@ -13,6 +14,8 @@ class SongLibrary:
     def __init__(self, db_path: str):
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
+        self._lock = threading.Lock()
+
         with self.conn as conn:
             conn.execute(
                 """
@@ -45,38 +48,48 @@ class SongLibrary:
         logger.debug(f"Existing songs in library: {[song.title for song in all_songs]}")
 
     def add_song(self, song: Song) -> str:
-        with self.conn as conn:
-            cur = conn.cursor()
-            cur.execute("SELECT id FROM songs WHERE file_path = ?", (song.file_path,))
-            row = cur.fetchone()
-            if row:
-                logger.info(
-                    f"Song already exists: {song.file_path} (ID: {row['id']}). Not adding duplicate."
+        with self._lock:
+            with self.conn as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT id FROM songs WHERE file_path = ?", (song.file_path,)
                 )
-                return row["id"]
-
-            cur.execute(
-                """
-                INSERT INTO songs (
-                    id, file_path, title, artist, duration, available_backends, md5, sha1, custom_metadata
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    song.id,
-                    song.file_path,
-                    song.title,
-                    song.artist,
-                    song.duration,
-                    json.dumps(song.available_backends),  # Serialize as JSON list
-                    song.md5,
-                    song.sha1,
-                    json.dumps(
-                        song.custom_metadata
-                    ),  # Serialize custom metadata as JSON
-                ),
-            )
-            logger.info(f"Added song: {song.title} to library with ID: {song.id}")
-            return song.id
+                row = cur.fetchone()
+                if row:
+                    logger.info(
+                        f"Song already exists: {song.file_path} (ID: {row['id']}). Not adding duplicate."
+                    )
+                    return row["id"]
+                try:
+                    cur.execute(
+                        """
+                        INSERT INTO songs (
+                            id, file_path, title, artist, duration, available_backends, md5, sha1, custom_metadata
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            song.id,
+                            song.file_path,
+                            song.title,
+                            song.artist,
+                            song.duration,
+                            json.dumps(
+                                song.available_backends
+                            ),  # Serialize as JSON list
+                            song.md5,
+                            song.sha1,
+                            json.dumps(song.custom_metadata),
+                        ),
+                    )
+                    logger.info(
+                        f"Added song: {song.title} to library with ID: {song.id}"
+                    )
+                    return song.id
+                except sqlite3.IntegrityError as e:
+                    logger.warning(
+                        f"Song not added due to integrity error: {e} (MD5: {song.md5}, SHA1: {song.sha1})"
+                    )
+                    return ""
 
     def remove_song(self, song_id: str) -> None:
         with self.conn as conn:
@@ -85,27 +98,32 @@ class SongLibrary:
             logger.info(f"Removed song with ID from library: {song_id}")
 
     def get_song(self, song_id: str) -> Optional[Song]:
-        with self.conn as conn:
-            cur = conn.cursor()
-            cur.execute("SELECT * FROM songs WHERE id = ?", (song_id,))
-            row = cur.fetchone()
-            if row:
-                return Song(
-                    id=row["id"],
-                    file_path=row["file_path"],
-                    title=row["title"],
-                    artist=row["artist"],
-                    duration=row["duration"],
-                    available_backends=json.loads(row["available_backends"]) if row["available_backends"] else [],
-                    md5=row["md5"],
-                    sha1=row["sha1"],
-                    custom_metadata=(
-                        json.loads(row["custom_metadata"])
-                        if row["custom_metadata"]
-                        else {}
-                    ),  # Deserialize JSON
-                )
-            return None
+        with self._lock:
+            with self.conn as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT * FROM songs WHERE id = ?", (song_id,))
+                row = cur.fetchone()
+                if row:
+                    return Song(
+                        id=row["id"],
+                        file_path=row["file_path"],
+                        title=row["title"],
+                        artist=row["artist"],
+                        duration=row["duration"],
+                        available_backends=(
+                            json.loads(row["available_backends"])
+                            if row["available_backends"]
+                            else []
+                        ),
+                        md5=row["md5"],
+                        sha1=row["sha1"],
+                        custom_metadata=(
+                            json.loads(row["custom_metadata"])
+                            if row["custom_metadata"]
+                            else {}
+                        ),  # Deserialize JSON
+                    )
+                return None
 
     def get_songs(self, song_ids: List[str]) -> List[Song]:
         if not song_ids:
@@ -123,7 +141,11 @@ class SongLibrary:
                     title=row["title"],
                     artist=row["artist"],
                     duration=row["duration"],
-                    available_backends=json.loads(row["available_backends"]) if row["available_backends"] else [],
+                    available_backends=(
+                        json.loads(row["available_backends"])
+                        if row["available_backends"]
+                        else []
+                    ),
                     md5=row["md5"],
                     sha1=row["sha1"],
                     custom_metadata=(
@@ -147,7 +169,11 @@ class SongLibrary:
                     title=row["title"],
                     artist=row["artist"],
                     duration=row["duration"],
-                    available_backends=json.loads(row["available_backends"]) if row["available_backends"] else [],
+                    available_backends=(
+                        json.loads(row["available_backends"])
+                        if row["available_backends"]
+                        else []
+                    ),
                     md5=row["md5"],
                     sha1=row["sha1"],
                     custom_metadata=(

@@ -6,6 +6,7 @@ from player_thread_manager import PlayerThreadManager  # type: ignore
 from queue_manager import QueueManager  # type: ignore
 
 from playlist.playlist import Playlist  # type: ignore
+from playlist.song import Song  # type: ignore
 
 
 class PlayerControlManager:
@@ -49,23 +50,14 @@ class PlayerControlManager:
                     next_entry.song_id if next_entry else ""
                 )
                 if song:
-                    backend_name = song.available_backends[0]
-                    backend_factory = self.main_window.player_backends.get(backend_name)
-                    if backend_factory:
-                        self.current_backend = backend_factory()
-                    else:
-                        self.current_backend = None
+                    self.play_song(song)
 
-                    if self.current_backend:
-                        self.current_backend.load_song(song)
-                        self.player_thread_manager.start(self.current_backend)
-                        if next_entry:
-                            self.history_playlist.add_entry(next_entry)
-                        if self.current_playlist:
-                            self.current_playlist.set_currently_playing_entry(
-                                next_entry if next_entry else None
-                            )
-            case (self.PlayerState.PAUSED, self.PlayerState.PLAYING):
+                if next_entry:
+                    self.history_playlist.add_entry(next_entry)
+
+                    if self.current_playlist:
+                        self.current_playlist.set_currently_playing_entry(next_entry)
+            case (self.PlayerState.PAUSED, self.PlayerState.PLAYING | self.PlayerState.PAUSED):
                 self.player_thread_manager.pause()
             case (self.PlayerState.PLAYING, self.PlayerState.PAUSED):
                 self.player_thread_manager.pause()
@@ -79,6 +71,18 @@ class PlayerControlManager:
                     f"Unhandled state transition from {self.state} to {new_state}"
                 )
         self.state = new_state
+
+    def play_song(self, song: Song) -> None:
+        backend_name = song.available_backends[0]
+        backend_factory = self.main_window.player_backends.get(backend_name)
+        if backend_factory:
+            self.current_backend = backend_factory()
+        else:
+            self.current_backend = None
+
+        if self.current_backend:
+            self.current_backend.load_song(song)
+            self.player_thread_manager.start(self.current_backend)
 
     def on_play_pressed(self) -> None:
         self.set_player_state(self.PlayerState.PLAYING)
@@ -96,8 +100,7 @@ class PlayerControlManager:
 
     def on_next_pressed(self) -> None:
         if self.state in (self.PlayerState.PLAYING, self.PlayerState.PAUSED):
-            if self.current_backend:
-                self.current_backend.next()
+            self.play_next()
 
     def on_seek(self, position: int) -> None:
         if self.state in (self.PlayerState.PLAYING, self.PlayerState.PAUSED):
@@ -117,6 +120,7 @@ class PlayerControlManager:
         self.play_next()
 
     def play_next(self) -> None:
+        self.set_player_state(self.PlayerState.STOPPED)
         self.play_queue()
 
     def play_queue(self) -> None:

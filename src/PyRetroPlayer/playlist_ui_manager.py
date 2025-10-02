@@ -5,9 +5,11 @@ from typing import Any, Dict, List
 from importlib_resources import files
 from loguru import logger
 from main_window import MainWindow  # type: ignore
-from PySide6.QtWidgets import QFileDialog
+from PySide6.QtGui import QAction  # type: ignore
+from PySide6.QtWidgets import QFileDialog  # type: ignore
 from settings.settings import Settings  # type: ignore
 
+from actions_manager import ActionsManager
 from playlist.column_manager import ColumnManager  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
 from playlist.playlist_manager import PlaylistManager  # type: ignore
@@ -52,6 +54,8 @@ class PlaylistUIManager:
         if not self.playlist_manager.playlists:
             self.create_new_playlist()
 
+        self.current_tree_view = self.tab_widget.currentWidget()
+
     def create_new_playlist(self) -> None:
         playlist = Playlist(name="New Playlist")
         self.playlist_manager.add_playlist(playlist)
@@ -64,7 +68,6 @@ class PlaylistUIManager:
             column_manager,
             self.column_default_definitions,
             self.main_window.song_library,
-            self.main_window.actions_,
             self.main_window,
         )
 
@@ -134,3 +137,15 @@ class PlaylistUIManager:
                 index, playlist
             )
             tree_view.set_currently_playing_row(index)
+
+    def setup_actions(self) -> None:
+        actions: List[QAction] = ActionsManager.get_actions_by_names(
+            self.main_window,
+            ["song_info_dialog"],
+        )
+        for i in range(self.tab_widget.count()):
+            widget = self.tab_widget.widget(i)
+            if isinstance(widget, PlaylistTreeView):
+                for action in actions:
+                    action.setParent(widget)
+                    widget.addAction(action)
