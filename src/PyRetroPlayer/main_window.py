@@ -104,19 +104,19 @@ class MainWindow(QMainWindow):
             except Exception:
                 pass
 
-        last_active_playlist_index = self.configuration.get(
-            "last_active_playlist_index", 0
+        self.playlist_ui_manager.tab_widget.setCurrentIndex(
+            self.configuration.get("last_active_playlist_index", 0)
         )
-        self.playlist_ui_manager.tab_widget.setCurrentIndex(last_active_playlist_index)
 
     def save_settings(self) -> None:
         geo = self.geometry()
         geometry = [geo.x(), geo.y(), geo.width(), geo.height()]
         self.configuration.set("window_geometry", geometry)
 
-        current_tab_index = self.playlist_ui_manager.tab_widget.currentIndex()
-
-        self.configuration.set("last_active_playlist_index", current_tab_index)
+        self.configuration.set(
+            "last_active_playlist_index",
+            self.playlist_ui_manager.tab_widget.currentIndex(),
+        )
 
         self.playlist_ui_manager.playlist_manager.save_playlists()
         self.playlist_ui_manager.tab_widget.update_tab_column_widths()
