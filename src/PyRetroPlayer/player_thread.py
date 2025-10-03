@@ -28,7 +28,7 @@ class PlayerThread(threading.Thread):
         self.stop_flag = threading.Event()
         self.pause_flag = threading.Event()
 
-        self.max_silence_length = (
+        self.max_silence_length_ms = (
             self.settings.get("max_silence_length", 10000) if self.settings else 10000
         )
 
@@ -41,7 +41,7 @@ class PlayerThread(threading.Thread):
 
         count: int = 0
 
-        silence_length: float = 0.0  # in milliseconds
+        silence_length_ms: float = 0.0
 
         while not self.stop_flag.is_set():
             if self.pause_flag.is_set():
@@ -57,17 +57,18 @@ class PlayerThread(threading.Thread):
 
             # check if only contains silence
             if all(sample == 0 for sample in buffer):
-                silence_length += (
+                silence_length_ms += (
                     len(buffer) / (self.audio_backend.samplerate * 2) * 1000
                 )
-                if silence_length > self.max_silence_length:
+                if silence_length_ms > self.max_silence_length_ms:
                     logger.debug(
                         "Max silence length exceeded ({} ms), stopping playback",
-                        self.max_silence_length,
+                        self.max_silence_length_ms,
                     )
+                    count = 0
                     break
             else:
-                silence_length = 0
+                silence_length_ms = 0
 
             self.audio_backend.write(buffer)
 
