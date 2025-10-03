@@ -6,7 +6,7 @@ from pyaudio import PyAudio, Stream, get_format_from_width
 
 
 class AudioBackendPyAudio(AudioBackend):
-    def __init__(self, samplerate: int = 48000, buffersize: int = 1024) -> None:
+    def __init__(self, samplerate: int = 44100, buffersize: int = 1024) -> None:
         self.samplerate: int = samplerate
         self.buffersize: int = buffersize
         self.buffer: bytes = bytes(self.buffersize * 2 * 2)
