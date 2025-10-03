@@ -398,6 +398,3 @@ class PlaylistTreeView(QTreeView):
         if current_song:
             dialog = SongInfoDialog(current_song, self)
             dialog.exec()
-        if current_song:
-            dialog = SongInfoDialog(current_song, self)
-            dialog.exec()

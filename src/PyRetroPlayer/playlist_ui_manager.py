@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from importlib_resources import files
 from loguru import logger
@@ -42,6 +42,7 @@ class PlaylistUIManager:
         )
         self.tab_widget.tab_added.connect(self.create_new_playlist)
         self.tab_widget.tab_deleted.connect(self.on_delete_playlist)
+        self.tab_widget.currentChanged.connect(self.on_current_tab_changed)
         self.main_window.ui_manager.add_widget(self.tab_widget)
 
         # Load playlists and add tabs
@@ -160,6 +161,19 @@ class PlaylistUIManager:
             tree_view = self.tab_widget.widget(current_index)
             if isinstance(tree_view, PlaylistTreeView):
                 tree_view.start_currently_playing()
+
+    def on_current_tab_changed(self, index: int) -> None:
+        self.current_tree_view = self.tab_widget.widget(index)
+
+    def get_current_tree_view(self) -> Optional[PlaylistTreeView]:
+        if isinstance(self.current_tree_view, PlaylistTreeView):
+            return self.current_tree_view
+        return None
+
+    def show_song_info_dialog(self) -> None:
+        tree_view = self.get_current_tree_view()
+        if tree_view:
+            tree_view.on_song_info_dialog()
 
     def setup_actions(self) -> None:
         actions: List[QAction] = ActionsManager.get_actions_by_names(

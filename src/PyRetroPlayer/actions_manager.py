@@ -49,7 +49,7 @@ class ActionsManager:
             "dialog-information",
             "Song Information",
             "Show information about the current song",
-            lambda main_window: main_window.playlist_ui_manager.current_tree_view.on_song_info_dialog,
+            lambda main_window: main_window.playlist_ui_manager.show_song_info_dialog,
         ),
     ]
 
