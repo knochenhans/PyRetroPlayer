@@ -2,6 +2,7 @@ import json
 import os
 from typing import Any, Dict, List
 
+from actions_manager import ActionsManager  # type: ignore
 from importlib_resources import files
 from loguru import logger
 from main_window import MainWindow  # type: ignore
@@ -9,7 +10,6 @@ from PySide6.QtGui import QAction  # type: ignore
 from PySide6.QtWidgets import QFileDialog  # type: ignore
 from settings.settings import Settings  # type: ignore
 
-from actions_manager import ActionsManager
 from playlist.column_manager import ColumnManager  # type: ignore
 from playlist.playlist import Playlist  # type: ignore
 from playlist.playlist_manager import PlaylistManager  # type: ignore

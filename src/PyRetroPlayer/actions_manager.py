@@ -1,6 +1,6 @@
-from playlist.playlist_tree_view import PlaylistTreeView  # type: ignore
-from main_window import MainWindow  # type: ignore
 from typing import Callable, List, Tuple
+
+from main_window import MainWindow  # type: ignore
 from PySide6.QtGui import QAction, QIcon  # type: ignore
 
 
@@ -53,10 +53,7 @@ class ActionsManager:
     ]
 
     @staticmethod
-    def create_actions(
-        main_window: MainWindow,
-        playlist_tree_view: PlaylistTreeView,
-    ) -> List[QAction]:
+    def create_actions(main_window: MainWindow) -> List[QAction]:
         actions: List[QAction] = []
         for (
             action_name,
