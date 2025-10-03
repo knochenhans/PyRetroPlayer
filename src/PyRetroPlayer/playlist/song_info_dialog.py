@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Dict, List, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
@@ -56,14 +56,22 @@ class SongInfoDialog(QDialog):
             self.model.appendRow([field_item, value_item])
 
         # Add custom metadata as individual rows
+        def add_metadata_rows(
+            key: str, value: str | List[str] | Dict[str, str], prefix: str = ""
+        ):
+            display_key = f"{prefix}{key.capitalize()}" if prefix else key.capitalize()
+            if isinstance(value, dict):
+                for subkey, subval in value.items():
+                    add_metadata_rows(subkey, subval, prefix=f"{display_key}: ")
+            elif isinstance(value, list):
+                field_item = QStandardItem(display_key)
+                value_item = QStandardItem(", ".join(map(str, value)))
+                self.model.appendRow([field_item, value_item])
+            else:
+                field_item = QStandardItem(display_key)
+                value_item = QStandardItem(str(value))
+                self.model.appendRow([field_item, value_item])
+
         if self.song.custom_metadata:
             for key, value in self.song.custom_metadata.items():
-                if key in ("credits", "message") and isinstance(value, dict):
-                    for subkey, subval in value.items():
-                        field_item = QStandardItem(f"{key.capitalize()}: {subkey}")
-                        value_item = QStandardItem(str(subval))
-                        self.model.appendRow([field_item, value_item])
-                elif key in ("credits", "message") and isinstance(value, list):
-                    field_item = QStandardItem(f"{key.capitalize()}")
-                    value_item = QStandardItem(", ".join(map(str, value)))
-                    self.model.appendRow([field_item, value_item])
+                add_metadata_rows(key, value)
