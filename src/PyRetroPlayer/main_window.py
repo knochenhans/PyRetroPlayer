@@ -70,17 +70,21 @@ class MainWindow(QMainWindow):
         self.audio_backends: Dict[str, Any] = {"PyAudio": lambda: AudioBackendPyAudio()}
         self.audio_backend = self.audio_backends["PyAudio"]()
 
-        from PyRetroPlayer.player_control_manager import PlayerControlManager
-
-        self.player_control_manager = PlayerControlManager(self, self.settings)
-
         from PyRetroPlayer.file_manager import FileManager
+        from PyRetroPlayer.player_control_manager import PlayerControlManager
         from PyRetroPlayer.playlist_ui_manager import PlaylistUIManager
         from PyRetroPlayer.ui_manager import UIManager
 
         self.ui_manager = UIManager(self)
-        self.file_manager = FileManager(self)
         self.playlist_ui_manager = PlaylistUIManager(self)
+        self.player_control_manager = PlayerControlManager(
+            self,
+            self.settings,
+            play_callback=self.playlist_ui_manager.on_playback_started,
+            stop_callback=self.playlist_ui_manager.on_playback_stopped,
+            pause_callback=self.playlist_ui_manager.on_playback_paused,
+        )
+        self.file_manager = FileManager(self)
 
         from PyRetroPlayer.actions_manager import ActionsManager
 

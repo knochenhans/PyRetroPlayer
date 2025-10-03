@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
@@ -71,6 +72,11 @@ class PlaylistTreeView(QTreeView):
     item_double_clicked = Signal(int)
     files_dropped = Signal(list)
     rows_moved = Signal(list)
+
+    class PlayerState(Enum):
+        STOPPED = auto()
+        PLAYING = auto()
+        PAUSED = auto()
 
     def __init__(
         self,
@@ -263,29 +269,38 @@ class PlaylistTreeView(QTreeView):
         else:
             super().dropEvent(event)
 
-    def _set_play_status(self, row: int, enable: bool) -> None:
+    def _set_play_status(self, row: int, state: "PlaylistTreeView.PlayerState") -> None:
         item = self.source_model.item(
             row, self.column_manager.get_column_index("playing")
         )
 
         if item:
-            if enable:
+            if state == self.PlayerState.PLAYING:
                 item.setIcon(QIcon.fromTheme("media-playback-start"))
-            else:
-                item.clearData()
+            elif state == self.PlayerState.PAUSED:
+                item.setIcon(QIcon.fromTheme("media-playback-pause"))
+            else:  # STOPPED
+                item.setIcon(QIcon())
             self.viewport().update()
-
-    def on_currently_playing_changed(
-        self, playlist_entry: Optional[PlaylistEntry]
-    ) -> None:
-        if playlist_entry is not None:
-            self.set_currently_playing_entry(playlist_entry)
 
     def set_currently_playing_row(self, row: int) -> None:
         if self.previous_row != -1:
-            self._set_play_status(self.previous_row, False)
-        self._set_play_status(row, True)
+            self._set_play_status(self.previous_row, self.PlayerState.STOPPED)
+        self._set_play_status(row, self.PlayerState.PLAYING)
         self.previous_row = row
+
+    def clear_currently_playing(self) -> None:
+        if self.previous_row != -1:
+            self._set_play_status(self.previous_row, self.PlayerState.STOPPED)
+            self.previous_row = -1
+
+    def pause_currently_playing(self) -> None:
+        if self.previous_row != -1:
+            self._set_play_status(self.previous_row, self.PlayerState.PAUSED)
+
+    def start_currently_playing(self) -> None:
+        if self.previous_row != -1:
+            self._set_play_status(self.previous_row, self.PlayerState.PLAYING)
 
     def set_currently_playing_entry(self, entry: Optional[PlaylistEntry]) -> None:
         if entry is None:
@@ -380,6 +395,9 @@ class PlaylistTreeView(QTreeView):
 
     def on_song_info_dialog(self) -> None:
         current_song = self.get_current_song()
+        if current_song:
+            dialog = SongInfoDialog(current_song, self)
+            dialog.exec()
         if current_song:
             dialog = SongInfoDialog(current_song, self)
             dialog.exec()

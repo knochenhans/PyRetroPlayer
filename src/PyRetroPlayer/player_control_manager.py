@@ -1,4 +1,5 @@
 from enum import Enum, auto
+from typing import Callable, Optional
 
 from loguru import logger
 
@@ -16,7 +17,18 @@ class PlayerControlManager:
         PLAYING = auto()
         PAUSED = auto()
 
-    def __init__(self, main_window: "MainWindow", settings: Settings) -> None:
+    def __init__(
+        self,
+        main_window: "MainWindow",
+        settings: Settings,
+        play_callback: Optional[Callable[[], None]] = None,
+        pause_callback: Optional[Callable[[], None]] = None,
+        stop_callback: Optional[Callable[[], None]] = None,
+        previous_callback: Optional[Callable[[], None]] = None,
+        next_callback: Optional[Callable[[], None]] = None,
+        seek_callback: Optional[Callable[[int], None]] = None,
+        volume_changed_callback: Optional[Callable[[int], None]] = None,
+    ) -> None:
         self.main_window = main_window
         self.state = self.PlayerState.STOPPED
         self.player_thread_manager = PlayerThreadManager(
@@ -27,9 +39,18 @@ class PlayerControlManager:
         )
         self.history_playlist = Playlist(name="History")
         self.queue_manager = QueueManager(self.history_playlist)
-        self.current_playlist = None
+        self.current_playlist: Optional[Playlist] = None
         self.current_playlist_index = -1
         self.current_backend = None
+
+        # Add callbacks for UI buttons
+        self.play_callback = play_callback
+        self.pause_callback = pause_callback
+        self.stop_callback = stop_callback
+        self.previous_callback = previous_callback
+        self.next_callback = next_callback
+        self.seek_callback = seek_callback
+        self.volume_changed_callback = volume_changed_callback
 
     def set_player_state(self, new_state: "PlayerControlManager.PlayerState") -> None:
         logger.debug(f"Player state changed from {self.state} to {new_state}")
@@ -77,6 +98,19 @@ class PlayerControlManager:
                 )
         self.state = new_state
 
+        match self.state:
+            case self.PlayerState.STOPPED:
+                if self.stop_callback:
+                    self.stop_callback()
+            case self.PlayerState.PLAYING:
+                if self.play_callback:
+                    self.play_callback()
+            case self.PlayerState.PAUSED:
+                if self.pause_callback:
+                    self.pause_callback()
+            case _:
+                pass
+
     def play_song(self, song: Song) -> None:
         backend_name = song.available_backends[0]
         backend_factory = self.main_window.player_backends.get(backend_name)
@@ -93,7 +127,10 @@ class PlayerControlManager:
         self.set_player_state(self.PlayerState.PLAYING)
 
     def on_pause_pressed(self) -> None:
-        self.set_player_state(self.PlayerState.PAUSED)
+        if self.state == self.PlayerState.PLAYING:
+            self.set_player_state(self.PlayerState.PAUSED)
+        else:
+            self.set_player_state(self.PlayerState.PLAYING)
 
     def on_stop_pressed(self) -> None:
         self.set_player_state(self.PlayerState.STOPPED)
@@ -143,10 +180,12 @@ class PlayerControlManager:
         #             self.play_module(song)
 
     def play_song_from_index(self, start_index: int, playlist: Playlist) -> None:
+        self.set_player_state(self.PlayerState.STOPPED)
         self.current_playlist = playlist
         self.current_playlist_index = start_index
+        self.queue_manager.clear()
         self.add_more_songs_to_queue(playlist, start_index)
-        self.set_player_state(self.PlayerState.PLAYING)
+        self.play_queue()
 
     def add_more_songs_to_queue(
         self, playlist: Playlist, start_index: int, count: int = 10

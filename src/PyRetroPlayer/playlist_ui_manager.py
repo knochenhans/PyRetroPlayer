@@ -29,7 +29,9 @@ class PlaylistUIManager:
         self.playlist_configuration.load()
 
         self.column_default_definitions: List[Dict[str, Any]] = json.loads(
-            files("PyRetroPlayer.data").joinpath("default_columns_configuration.json").read_text()
+            files("PyRetroPlayer.data")
+            .joinpath("default_columns_configuration.json")
+            .read_text()
         )
 
         self.column_managers: Dict[str, ColumnManager] = {}
@@ -137,6 +139,27 @@ class PlaylistUIManager:
                 index, playlist
             )
             tree_view.set_currently_playing_row(index)
+
+    def on_playback_stopped(self) -> None:
+        current_index = self.tab_widget.currentIndex()
+        if current_index != -1:
+            tree_view = self.tab_widget.widget(current_index)
+            if isinstance(tree_view, PlaylistTreeView):
+                tree_view.clear_currently_playing()
+
+    def on_playback_paused(self) -> None:
+        current_index = self.tab_widget.currentIndex()
+        if current_index != -1:
+            tree_view = self.tab_widget.widget(current_index)
+            if isinstance(tree_view, PlaylistTreeView):
+                tree_view.pause_currently_playing()
+
+    def on_playback_started(self) -> None:
+        current_index = self.tab_widget.currentIndex()
+        if current_index != -1:
+            tree_view = self.tab_widget.widget(current_index)
+            if isinstance(tree_view, PlaylistTreeView):
+                tree_view.start_currently_playing()
 
     def setup_actions(self) -> None:
         actions: List[QAction] = ActionsManager.get_actions_by_names(
