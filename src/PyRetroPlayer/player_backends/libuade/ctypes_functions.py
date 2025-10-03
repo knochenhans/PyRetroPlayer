@@ -5,15 +5,25 @@ from ctypes import (
     POINTER,
     RTLD_GLOBAL,
     c_char_p,
+    c_double,
+    c_float,
+    c_int,
     c_int16,
     c_size_t,
     c_ssize_t,
+    c_ubyte,
     c_uint,
     c_void_p,
 )
 from ctypes.util import find_library
 
-from player_backends.libuade.ctypes_classes import *
+from player_backends.libuade.ctypes_classes import (  # type: ignore
+    uade_ext_to_format_version,
+    uade_ipc,
+    uade_notification,
+    uade_song_info,
+    uade_state,
+)
 
 bencode_path = find_library("bencodetools")
 if not bencode_path:

@@ -1,5 +1,6 @@
 import ctypes
 
+from loguru import logger
 from player_backends.libuade import songinfo  # type: ignore
 from player_backends.libuade.ctypes_classes import (  # type: ignore
     UADE_BYTES_PER_FRAME,
@@ -16,9 +17,7 @@ from player_backends.libuade.ctypes_classes import (  # type: ignore
     uade_state,
     uade_subsong_info,
 )
-from player_backends.libuade.ctypes_functions import libuade, libc  # type: ignore
-from loguru import logger
-
+from player_backends.libuade.ctypes_functions import libc, libuade  # type: ignore
 from player_backends.player_backend import PlayerBackend  # type: ignore
 
 
