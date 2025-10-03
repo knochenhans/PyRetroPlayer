@@ -1,8 +1,8 @@
 import hashlib
-from typing import Any, Callable, Optional
+from typing import Any, Callable, List, Optional
 from venv import logger
 
-from playlist.song import Song  # type: ignore
+from PyRetroPlayer.playlist.song import Song
 
 
 class PlayerBackend:
@@ -14,6 +14,7 @@ class PlayerBackend:
         self.current_position: int = 0
         self.subsong_changed_callback: Optional[Callable[[int, int], None]] = None
         self.song_name_changed_callback: Optional[Callable[[str], None]] = None
+        self.blacklisted_extensions: List[str] = []
 
     def load_song(self, song: Song) -> None:
         self.song = song
@@ -30,6 +31,13 @@ class PlayerBackend:
         self.song_name_changed_callback = callback
 
     def check_module(self) -> bool:
+        if not self.song:
+            return False
+
+        if self.song.file_path.lower().endswith(
+            tuple(ext.lower() for ext in self.blacklisted_extensions)
+        ):
+            logger.warning(f"File extension of {self.song.file_path} is blacklisted.")
         return False
 
     def prepare_playing(self, subsong_nr: int = -1) -> None:

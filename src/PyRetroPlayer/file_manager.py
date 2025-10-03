@@ -1,17 +1,17 @@
 from typing import List, Optional
 
-from loaders.abstract_loader import AbstractLoader  # type: ignore
-from loaders.fake_loader import FakeLoader  # type: ignore
-from loaders.file_fetcher import FileFetcher  # type: ignore
-from loaders.local_file_loader import LocalFileLoader  # type: ignore
 from loguru import logger
-from main_window import MainWindow  # type: ignore
 from PySide6.QtWidgets import (
     QFileDialog,
 )
 
-from playlist.playlist import Playlist  # type: ignore
-from playlist.song import Song  # type: ignore
+from PyRetroPlayer.loaders.abstract_loader import AbstractLoader
+from PyRetroPlayer.loaders.fake_loader import FakeLoader
+from PyRetroPlayer.loaders.file_fetcher import FileFetcher
+from PyRetroPlayer.loaders.local_file_loader import LocalFileLoader
+from PyRetroPlayer.main_window import MainWindow
+from PyRetroPlayer.playlist.playlist import Playlist
+from PyRetroPlayer.playlist.song import Song
 
 
 class FileManager:
@@ -74,7 +74,7 @@ class FileManager:
         self.main_window.ui_manager.progress_bar.hide()
         logger.info("All songs have been loaded.")
         if self.file_loader:
-            self.file_loader.all_songs_loaded_callback = None
+            self.file_loader.cleanup()
             self.file_loader = None
 
         # self.main_window.update_playlist_view()

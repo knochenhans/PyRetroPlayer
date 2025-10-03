@@ -1,12 +1,13 @@
 from enum import Enum, auto
 
 from loguru import logger
-from main_window import MainWindow  # type: ignore
-from player_thread_manager import PlayerThreadManager  # type: ignore
-from queue_manager import QueueManager  # type: ignore
 
-from playlist.playlist import Playlist  # type: ignore
-from playlist.song import Song  # type: ignore
+from PyRetroPlayer.main_window import MainWindow
+from PyRetroPlayer.player_thread_manager import PlayerThreadManager
+from PyRetroPlayer.playlist.playlist import Playlist
+from PyRetroPlayer.playlist.song import Song
+from PyRetroPlayer.queue_manager import QueueManager
+from PyRetroPlayer.settings.settings import Settings
 
 
 class PlayerControlManager:
@@ -15,11 +16,12 @@ class PlayerControlManager:
         PLAYING = auto()
         PAUSED = auto()
 
-    def __init__(self, main_window: "MainWindow") -> None:
+    def __init__(self, main_window: "MainWindow", settings: Settings) -> None:
         self.main_window = main_window
         self.state = self.PlayerState.STOPPED
         self.player_thread_manager = PlayerThreadManager(
             audio_backend=self.main_window.audio_backend,
+            settings=settings,
             on_position_changed=self.on_position_changed,
             on_song_finished=self.on_song_finished,
         )
@@ -57,7 +59,10 @@ class PlayerControlManager:
 
                     if self.current_playlist:
                         self.current_playlist.set_currently_playing_entry(next_entry)
-            case (self.PlayerState.PAUSED, self.PlayerState.PLAYING | self.PlayerState.PAUSED):
+            case (
+                self.PlayerState.PAUSED,
+                self.PlayerState.PLAYING | self.PlayerState.PAUSED,
+            ):
                 self.player_thread_manager.pause()
             case (self.PlayerState.PLAYING, self.PlayerState.PAUSED):
                 self.player_thread_manager.pause()

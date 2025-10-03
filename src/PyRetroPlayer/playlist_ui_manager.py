@@ -2,19 +2,19 @@ import json
 import os
 from typing import Any, Dict, List
 
-from actions_manager import ActionsManager  # type: ignore
 from importlib_resources import files
 from loguru import logger
-from main_window import MainWindow  # type: ignore
-from PySide6.QtGui import QAction  # type: ignore
-from PySide6.QtWidgets import QFileDialog  # type: ignore
-from settings.settings import Settings  # type: ignore
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QFileDialog
 
-from playlist.column_manager import ColumnManager  # type: ignore
-from playlist.playlist import Playlist  # type: ignore
-from playlist.playlist_manager import PlaylistManager  # type: ignore
-from playlist.playlist_tab_widget import PlaylistTabWidget  # type: ignore
-from playlist.playlist_tree_view import PlaylistTreeView  # type: ignore
+from PyRetroPlayer.actions_manager import ActionsManager
+from PyRetroPlayer.main_window import MainWindow
+from PyRetroPlayer.playlist.column_manager import ColumnManager
+from PyRetroPlayer.playlist.playlist import Playlist
+from PyRetroPlayer.playlist.playlist_manager import PlaylistManager
+from PyRetroPlayer.playlist.playlist_tab_widget import PlaylistTabWidget
+from PyRetroPlayer.playlist.playlist_tree_view import PlaylistTreeView
+from PyRetroPlayer.settings.settings import Settings
 
 
 class PlaylistUIManager:
@@ -29,7 +29,7 @@ class PlaylistUIManager:
         self.playlist_configuration.load()
 
         self.column_default_definitions: List[Dict[str, Any]] = json.loads(
-            files("data").joinpath("default_columns_configuration.json").read_text()
+            files("PyRetroPlayer.data").joinpath("default_columns_configuration.json").read_text()
         )
 
         self.column_managers: Dict[str, ColumnManager] = {}
@@ -79,7 +79,7 @@ class PlaylistUIManager:
         )
 
         playlist_view.files_dropped.connect(
-            lambda file_paths: self.main_window.file_manager.load_files(  # type: ignore
+            lambda file_paths: self.main_window.file_manager.load_files(
                 file_paths, playlist
             )
         )

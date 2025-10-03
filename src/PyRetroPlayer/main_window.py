@@ -2,25 +2,29 @@ import os
 import sys
 from typing import Any, Dict, List, Optional
 
-from appdirs import user_config_dir, user_data_dir  # type: ignore
-from audio_backends.pyaudio.audio_backend_pyuadio import (  # type: ignore
-    AudioBackendPyAudio,
-)
-from player_backends.libuade.player_backend_libuade import PlayerBackendLibUADE  # type: ignore
-from player_backends.libopenmpt.player_backend_libopenmpt import PlayerBackendLibOpenMPT  # type: ignore
+from appdirs import user_config_dir, user_data_dir
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction, QCloseEvent  # type: ignore
+from PySide6.QtGui import QAction, QCloseEvent
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
     QSlider,
     QToolBar,
 )
-from settings.settings import Settings  # type: ignore
 
-from playlist.playlist import Playlist  # type: ignore
-from playlist.song import Song  # type: ignore
-from playlist.song_library import SongLibrary  # type: ignore
+from PyRetroPlayer.audio_backends.pyaudio.audio_backend_pyuadio import (
+    AudioBackendPyAudio,
+)
+from PyRetroPlayer.player_backends.libopenmpt.player_backend_libopenmpt import (
+    PlayerBackendLibOpenMPT,
+)
+from PyRetroPlayer.player_backends.libuade.player_backend_libuade import (
+    PlayerBackendLibUADE,
+)
+from PyRetroPlayer.playlist.playlist import Playlist
+from PyRetroPlayer.playlist.song import Song
+from PyRetroPlayer.playlist.song_library import SongLibrary
+from PyRetroPlayer.settings.settings import Settings
 
 
 class MainWindow(QMainWindow):
@@ -32,21 +36,21 @@ class MainWindow(QMainWindow):
         self.application_name: str = "PyRetroPlayer"
         self.application_version: str = "0.1.0"
 
-        self.config_dir = os.path.join(user_config_dir(), self.application_name)  # type: ignore
+        self.config_dir = os.path.join(user_config_dir(), self.application_name)
         os.makedirs(self.config_dir, exist_ok=True)
 
-        self.data_dir = os.path.join(user_data_dir(), self.application_name)  # type: ignore
+        self.data_dir = os.path.join(user_data_dir(), self.application_name)
         os.makedirs(self.data_dir, exist_ok=True)
 
-        self.configuration: Settings = Settings(
+        self.settings: Settings = Settings(
             "configuration",
             self.config_dir,
             self.application_name,
         )
-        self.configuration.ensure_default_config()
-        self.configuration.load()
+        self.settings.ensure_default_config()
+        self.settings.load()
 
-        self.actions_: List[QAction] = []
+        # self.actions_: List[QAction] = []
 
         self.setWindowTitle(f"{self.application_name} v{self.application_version}")
 
@@ -66,21 +70,21 @@ class MainWindow(QMainWindow):
         self.audio_backends: Dict[str, Any] = {"PyAudio": lambda: AudioBackendPyAudio()}
         self.audio_backend = self.audio_backends["PyAudio"]()
 
-        from player_control_manager import PlayerControlManager  # type: ignore
+        from PyRetroPlayer.player_control_manager import PlayerControlManager
 
-        self.player_control_manager = PlayerControlManager(self)
+        self.player_control_manager = PlayerControlManager(self, self.settings)
 
-        from file_manager import FileManager  # type: ignore
-        from playlist_ui_manager import PlaylistUIManager  # type: ignore
-        from ui_manager import UIManager  # type: ignore
+        from PyRetroPlayer.file_manager import FileManager
+        from PyRetroPlayer.playlist_ui_manager import PlaylistUIManager
+        from PyRetroPlayer.ui_manager import UIManager
 
         self.ui_manager = UIManager(self)
         self.file_manager = FileManager(self)
         self.playlist_ui_manager = PlaylistUIManager(self)
 
-        from actions_manager import ActionsManager  # type: ignore
+        from PyRetroPlayer.actions_manager import ActionsManager
 
-        self.actions_: List[QAction] = ActionsManager.get_actions_by_names(  # type: ignore
+        self.actions_: List[QAction] = ActionsManager.get_actions_by_names(
             self, ["play", "pause", "stop", "previous", "next"]
         )
 
@@ -96,7 +100,7 @@ class MainWindow(QMainWindow):
         self.load_settings()
 
     def load_settings(self) -> None:
-        geometry = self.configuration.get("window_geometry")
+        geometry = self.settings.get("window_geometry")
         if geometry:
             try:
                 x, y, w, h = geometry
@@ -105,15 +109,15 @@ class MainWindow(QMainWindow):
                 pass
 
         self.playlist_ui_manager.tab_widget.setCurrentIndex(
-            self.configuration.get("last_active_playlist_index", 0)
+            self.settings.get("last_active_playlist_index", 0)
         )
 
     def save_settings(self) -> None:
         geo = self.geometry()
         geometry = [geo.x(), geo.y(), geo.width(), geo.height()]
-        self.configuration.set("window_geometry", geometry)
+        self.settings.set("window_geometry", geometry)
 
-        self.configuration.set(
+        self.settings.set(
             "last_active_playlist_index",
             self.playlist_ui_manager.tab_widget.currentIndex(),
         )
@@ -125,7 +129,7 @@ class MainWindow(QMainWindow):
 
         # current_volume = volume_slider.value()
 
-        self.configuration.save()
+        self.settings.save()
 
     def setup_icon_bar(self) -> None:
         for action in self.actions_:

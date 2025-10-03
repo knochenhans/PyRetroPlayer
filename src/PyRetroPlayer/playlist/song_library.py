@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from loguru import logger
 
-from playlist.song import Song  # type: ignore
+from PyRetroPlayer.playlist.song import Song
 
 
 class SongLibrary:

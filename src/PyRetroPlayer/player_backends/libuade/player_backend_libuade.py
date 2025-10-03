@@ -1,8 +1,9 @@
 import ctypes
 
 from loguru import logger
-from player_backends.libuade import songinfo  # type: ignore
-from player_backends.libuade.ctypes_classes import (  # type: ignore
+
+from PyRetroPlayer.player_backends.libuade import songinfo
+from PyRetroPlayer.player_backends.libuade.ctypes_classes import (
     UADE_BYTES_PER_FRAME,
     UADE_MAX_MESSAGE_SIZE,
     UADE_NOTIFICATION_TYPE,
@@ -17,8 +18,8 @@ from player_backends.libuade.ctypes_classes import (  # type: ignore
     uade_state,
     uade_subsong_info,
 )
-from player_backends.libuade.ctypes_functions import libc, libuade  # type: ignore
-from player_backends.player_backend import PlayerBackend  # type: ignore
+from PyRetroPlayer.player_backends.libuade.ctypes_functions import libc, libuade
+from PyRetroPlayer.player_backends.player_backend import PlayerBackend
 
 
 class PlayerBackendLibUADE(PlayerBackend):
@@ -30,8 +31,24 @@ class PlayerBackendLibUADE(PlayerBackend):
 
         logger.debug("PlayerBackendUADE initialized")
 
+        self.blacklisted_extensions = [
+            ".mp3",
+            ".wav",
+            ".flac",
+            ".ogg",
+            ".aiff",
+            ".aif",
+            ".aac",
+            ".m4a",
+            ".wma",
+            ".alac",
+            ".opus",
+        ]
+
     def check_module(self) -> bool:
-        if not self.song:
+        base = super().check_module()
+
+        if not self.song or not base:
             return False
 
         self.module_size = ctypes.c_size_t()
@@ -44,6 +61,7 @@ class PlayerBackendLibUADE(PlayerBackend):
             logger.error(error_message)
             return False
 
+        # TODO: Check why this is freed here but then used in uade_play_from_buffer
         libc.free(ret)
 
         ret = libuade.uade_play_from_buffer(
@@ -232,7 +250,7 @@ class PlayerBackendLibUADE(PlayerBackend):
     def free_module(self) -> None:
         if self.state_ptr:
             libuade.uade_cleanup_state(self.state_ptr)
-            self.state_ptr = libuade.uade_new_state(None)
+            self.state_ptr = None  # type: ignore
             logger.info("UADE instance deleted")
 
     def seek(self, position: int) -> None:
@@ -252,8 +270,10 @@ class PlayerBackendLibUADE(PlayerBackend):
     def cleanup(self) -> None:
         if self.state_ptr:
             libuade.uade_cleanup_state(self.state_ptr)
+            self.state_ptr = None  # type: ignore
 
         if self.config_ptr:
             libc.free(self.config_ptr)
+            self.config_ptr = None  # type: ignore
 
         logger.info("UADE cleaned up")

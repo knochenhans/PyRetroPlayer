@@ -57,7 +57,7 @@ class Settings:
         config_dir = os.path.join(user_config_dir(), self.folder_name)
         os.makedirs(config_dir, exist_ok=True)
 
-        default_config_path = files("data").joinpath(f"default_{self.name}.json")
+        default_config_path = files("PyRetroPlayer.data").joinpath(f"default_{self.name}.json")
         user_config_path = os.path.join(config_dir, f"{self.name}.json")
 
         if not os.path.exists(user_config_path):

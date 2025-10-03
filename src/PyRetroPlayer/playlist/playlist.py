@@ -1,11 +1,11 @@
 import json
 import uuid
-from typing import Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from loguru import logger
 
-from playlist.playlist_entry import PlaylistEntry  # type: ignore
-from playlist.song_library import SongLibrary  # type: ignore
+from PyRetroPlayer.playlist.playlist_entry import PlaylistEntry
+from PyRetroPlayer.playlist.song_library import SongLibrary
 
 
 class Playlist:
@@ -84,21 +84,26 @@ class Playlist:
     def load_playlist(file_path: str) -> Optional["Playlist"]:
         try:
             with open(file_path, "r") as f:
-                playlist_data = json.load(f)
-                logger.info(f"Loaded playlist: {playlist_data['name']}")
+                playlist_data: Dict[str, Any] = json.load(f)
+                logger.info(f"Loaded playlist: {playlist_data.get('name')}")
                 entries = [
                     PlaylistEntry.from_dict(e) for e in playlist_data.get("entries", [])
                 ]
                 # fallback for old format
                 if not entries and "song_ids" in playlist_data:
                     entries = [
-                        PlaylistEntry(song_id) for song_id in playlist_data["song_ids"]
+                        PlaylistEntry(song_id)
+                        for song_id in playlist_data.get("song_ids", [])
                     ]
-                return Playlist(
-                    id=playlist_data["id"],
-                    name=playlist_data["name"],
+                playlist = Playlist(
+                    id=playlist_data.get("id"),
+                    name=playlist_data.get("name"),
                     entries=entries,
                 )
+                playlist.current_song_index = playlist_data.get(
+                    "current_song_index", -1
+                )
+                return playlist
         except (json.JSONDecodeError, KeyError, FileNotFoundError) as e:
             logger.error(f"Failed to load playlist from {file_path}: {e}")
             return None
@@ -111,6 +116,7 @@ class Playlist:
                     {
                         "id": playlist.id,
                         "name": playlist.name,
+                        "current_song_index": playlist.current_song_index,
                         "entries": [entry.to_dict() for entry in playlist.entries],
                     },
                     f,

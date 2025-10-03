@@ -2,11 +2,11 @@ import threading
 import time
 from typing import Callable, Dict, Optional
 
-from loaders.abstract_loader import AbstractLoader  # type: ignore
 from loguru import logger
-from player_backends.player_backend import PlayerBackend  # type: ignore
 
-from playlist.song import Song  # type: ignore
+from PyRetroPlayer.loaders.abstract_loader import AbstractLoader
+from PyRetroPlayer.player_backends.player_backend import PlayerBackend
+from PyRetroPlayer.playlist.song import Song
 
 
 class FakeLoader(AbstractLoader):

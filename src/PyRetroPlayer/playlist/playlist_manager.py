@@ -1,15 +1,16 @@
 import os
 from typing import List
 
-from appdirs import user_data_dir  # type: ignore
+from appdirs import user_data_dir
 from loguru import logger
-from playlist.playlist import Playlist  # type: ignore
+
+from PyRetroPlayer.playlist.playlist import Playlist
 
 
 class PlaylistManager:
     def __init__(self, app_name: str) -> None:
         self.app_name = app_name
-        self.playlists_path = os.path.join(user_data_dir(self.app_name), "playlist")  # type: ignore
+        self.playlists_path = os.path.join(user_data_dir(self.app_name), "playlist")
         os.makedirs(self.playlists_path, exist_ok=True)
         self.playlists: List[Playlist] = []
 

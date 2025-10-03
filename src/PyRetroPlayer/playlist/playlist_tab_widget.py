@@ -1,12 +1,15 @@
 # from player_backends.Song import Song
-from playlist.playlist import Playlist  # type: ignore
-from playlist.playlist_manager import PlaylistManager  # type: ignore
-from playlist.playlist_tab_bar import PlaylistTabBar  # type: ignore
-from playlist.playlist_tab_bar_edit import PlaylistTabBarEdit  # type: ignore
-from playlist.playlist_tree_view import PlaylistTreeView  # type: ignore
-from PySide6.QtCore import QPoint, Qt, Signal, Slot  # type: ignore
+from PySide6.QtCore import QPoint, Qt, Signal, Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow, QMenu, QTabWidget, QToolButton
+
+from PyRetroPlayer.playlist.playlist import Playlist
+from PyRetroPlayer.playlist.playlist_manager import PlaylistManager
+from PyRetroPlayer.playlist.playlist_tab_bar import PlaylistTabBar
+from PyRetroPlayer.playlist.playlist_tab_bar_edit import (
+    PlaylistTabBarEdit,
+)
+from PyRetroPlayer.playlist.playlist_tree_view import PlaylistTreeView
 
 
 class PlaylistTabWidget(QTabWidget):
@@ -67,7 +70,7 @@ class PlaylistTabWidget(QTabWidget):
         self.playlist_manager.reorder_playlists(from_index, to_index)
 
     def get_current_tab(self) -> PlaylistTreeView:
-        return self.widget(self.currentIndex())  # type: ignore
+        return self.widget(self.currentIndex())
 
     @Slot()
     def doubleClicked(self, index: int) -> None:

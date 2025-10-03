@@ -2,9 +2,11 @@ import threading
 import time
 from typing import Callable, Optional
 
-from audio_backends.audio_backend import AudioBackend  # type: ignore
 from loguru import logger
-from player_backends.player_backend import PlayerBackend  # type: ignore
+
+from PyRetroPlayer.audio_backends.audio_backend import AudioBackend
+from PyRetroPlayer.player_backends.player_backend import PlayerBackend
+from PyRetroPlayer.settings.settings import Settings
 
 
 class PlayerThread(threading.Thread):
@@ -12,6 +14,7 @@ class PlayerThread(threading.Thread):
         self,
         player_backend: PlayerBackend,
         audio_backend: AudioBackend,
+        settings: Settings,
         on_position_changed: Optional[Callable[[int, int], None]] = None,
         on_song_finished: Optional[Callable[[], None]] = None,
     ) -> None:
@@ -20,8 +23,15 @@ class PlayerThread(threading.Thread):
         self.audio_backend = audio_backend
         self.on_position_changed = on_position_changed
         self.on_song_finished = on_song_finished
+        self.settings = settings
+
         self.stop_flag = threading.Event()
         self.pause_flag = threading.Event()
+
+        self.max_silence_length = (
+            self.settings.get("max_silence_length", 10000) if self.settings else 10000
+        )
+
         logger.debug("PlayerThread initialized")
 
     def run(self) -> None:
@@ -30,6 +40,8 @@ class PlayerThread(threading.Thread):
         logger.debug("Module length: {} milliseconds", module_length)
 
         count: int = 0
+
+        silence_length: float = 0.0  # in milliseconds
 
         while not self.stop_flag.is_set():
             if self.pause_flag.is_set():
@@ -42,6 +54,20 @@ class PlayerThread(threading.Thread):
             if count == 0:
                 logger.debug("End of module reached")
                 break
+
+            # check if only contains silence
+            if all(sample == 0 for sample in buffer):
+                silence_length += (
+                    len(buffer) / (self.audio_backend.samplerate * 2) * 1000
+                )
+                if silence_length > self.max_silence_length:
+                    logger.debug(
+                        "Max silence length exceeded ({} ms), stopping playback",
+                        self.max_silence_length,
+                    )
+                    break
+            else:
+                silence_length = 0
 
             self.audio_backend.write(buffer)
 

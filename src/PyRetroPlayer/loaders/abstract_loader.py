@@ -1,8 +1,9 @@
 from typing import Callable, Dict, List, Optional
 
 from loguru import logger
-from player_backends.player_backend import PlayerBackend  # type: ignore
-from playlist.song import Song  # type: ignore
+
+from PyRetroPlayer.player_backends.player_backend import PlayerBackend
+from PyRetroPlayer.playlist.song import Song
 
 
 class AbstractLoader:
@@ -20,6 +21,18 @@ class AbstractLoader:
         self.all_songs_loaded_callback: Optional[Callable[[], None]] = None
 
         self.reset()
+
+    def cleanup(self) -> None:
+        self.all_songs_loaded_callback = None
+
+        # Shut down cleanly
+        try:
+            # optionally wait for tasks to finish; if you want to cancel, iterate and cancel futures
+            pass
+        except Exception:
+            logger.exception("Error shutting down resources")
+        finally:
+            pass
 
     def reset(self) -> None:
         self.file_list: List[str] = []

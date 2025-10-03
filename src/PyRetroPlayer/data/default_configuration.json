@@ -1,4 +1,5 @@
 {
     "last_file_directory": "",
-    "last_directory": ""
+    "last_directory": "",
+    "max_silence_length": 10000
 }

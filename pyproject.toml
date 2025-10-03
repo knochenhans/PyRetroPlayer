@@ -3,6 +3,10 @@ pythonpath = [
   ".", "src", "tests", "src/PyRetroPlayer", "tests/PyRetroPlayer",
 ]
 
+[tool.mypy]
+mypy_path = ["src", "tests"]
+packages = ["PyRetroPlayer"]
+
 [build-system]
 build-backend = "hatchling.build"
 requires = ["hatchling", "hatch-requirements-txt"]

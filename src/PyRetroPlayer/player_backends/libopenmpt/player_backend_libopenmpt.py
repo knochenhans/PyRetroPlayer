@@ -5,10 +5,10 @@ from typing import List, Optional, Tuple
 
 from loguru import logger
 
-sys.path.append("../libopenmpt_py")
+# sys.path.append("../libopenmpt_py")
 
-from libopenmpt_py import libopenmpt  # type: ignore
-from player_backends.player_backend import PlayerBackend  # type: ignore
+from PyRetroPlayer.libopenmpt_py.libopenmpt_py import libopenmpt
+from PyRetroPlayer.player_backends.player_backend import PlayerBackend
 
 
 def log_callback(user_data: Optional[ctypes.c_void_p], level: int, message: str):

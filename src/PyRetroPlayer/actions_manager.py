@@ -1,7 +1,8 @@
 from typing import Callable, List, Tuple
 
-from main_window import MainWindow  # type: ignore
-from PySide6.QtGui import QAction, QIcon  # type: ignore
+from PySide6.QtGui import QAction, QIcon
+
+from PyRetroPlayer.main_window import MainWindow
 
 
 class ActionsManager:

@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import QDialog, QTreeView, QVBoxLayout, QWidget
 
-from playlist.song import Song  # type: ignore
+from PyRetroPlayer.playlist.song import Song
 
 
 class SongInfoDialog(QDialog):

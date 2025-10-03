@@ -3,8 +3,8 @@ from typing import List, Optional
 
 from loguru import logger
 
-from playlist.playlist import Playlist  # type: ignore
-from playlist.playlist_entry import PlaylistEntry  # type: ignore
+from PyRetroPlayer.playlist.playlist import Playlist
+from PyRetroPlayer.playlist.playlist_entry import PlaylistEntry
 
 
 class QueueManager:

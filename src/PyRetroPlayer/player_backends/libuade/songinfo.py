@@ -1,12 +1,11 @@
 import os
+from ctypes import POINTER, c_ubyte, cast, create_string_buffer
 from enum import Enum
-from typing import Dict, List, Union
+from typing import Dict, List, TypedDict, Union
 
 from loguru import logger
 
-from player_backends.libuade.ctypes_functions import libuade
-from ctypes import POINTER, c_ubyte, cast, create_string_buffer
-from typing import TypedDict
+from PyRetroPlayer.player_backends.libuade.ctypes_functions import libuade
 
 
 class UadeSongInfoType(Enum):
@@ -38,7 +37,7 @@ class Credits(TypedDict):
 
 
 def asciiline(buf: bytes) -> str:
-    dst = []
+    dst: List[str] = []
     for c in buf[:16]:
         if chr(c).isprintable() and not chr(c).isspace():
             dst.append(chr(c))
@@ -57,7 +56,7 @@ def hexdump(filename: str, toread: int) -> str:
     if not buf:
         raise ValueError("No data read from file")
 
-    result = []
+    result: List[str] = []
     rb = len(buf)
     roff = 0
 
@@ -170,7 +169,10 @@ def process_ahx_mod(credits: Credits, buf: bytes) -> None:
             instrument_names.append(
                 InstrumentInfo(
                     index=i + 1,
-                    name=buf[offset:].split(b"\x00", 1)[0].decode("cp1251").replace("'", "\'"),
+                    name=buf[offset:]
+                    .split(b"\x00", 1)[0]
+                    .decode("cp1251")
+                    .replace("'", "'"),
                     size=0,
                     vol=0,
                     fine=0,
@@ -217,7 +219,7 @@ def process_ptk_mod(
             inst_info.append(
                 InstrumentInfo(
                     index=i + 1,
-                    name=name.replace("'", "\'"),
+                    name=name.replace("'", "'"),
                     size=size,
                     vol=vol,
                     fine=fine,
@@ -256,7 +258,7 @@ def process_digi_mod(credits: Credits, buf: bytes) -> None:
             inst_info.append(
                 InstrumentInfo(
                     index=i + 1,
-                    name=name.replace("'", "\'"),
+                    name=name.replace("'", "'"),
                     size=size,
                     vol=vol,
                     fine=fine,
@@ -290,7 +292,7 @@ def process_custom(credits: Credits, buf: bytes) -> None:
 
     if hunk[16:21] == b"$VER:":
         offset = 21
-        while offset < hunk_size and hunk[offset] == b" ":
+        while offset < hunk_size and hunk[offset] == 32:
             offset += 1
         if offset >= hunk_size:
             raise ValueError("Invalid version string")
@@ -397,28 +399,28 @@ def process_module(
         "ADSC",
     ]:
         process_ptk_mod(credits, 31, buf)
-    elif pre == "DL":
+    elif pre_str == "DL":
         process_WTWT_mod(credits, buf, b"UNCL", b"EART", 0x28)
-    elif pre == "BSS":
+    elif pre_str == "BSS":
         process_WTWT_mod(credits, buf, b"BEAT", b"HOVE", 0x1C)
-    elif pre == "GRAY":
+    elif pre_str == "GRAY":
         process_WTWT_mod(credits, buf, b"FRED", b"GRAY", 0x10)
-    elif pre == "JMF":
+    elif pre_str == "JMF":
         process_WTWT_mod(credits, buf, b"J.FL", b"OGEL", 0x14)
-    elif pre == "SPL":
+    elif pre_str == "SPL":
         process_WTWT_mod(credits, buf, b"!SOP", b"ROL!", 0x10)
-    elif pre == "HD":
+    elif pre_str == "HD":
         process_WTWT_mod(credits, buf, b"H.DA", b"VIES", 24)
-    elif pre == "RIFF":
+    elif pre_str == "RIFF":
         process_WTWT_mod(credits, buf, b"RIFF", b"RAFF", 0x14)
-    elif pre == "FP":
+    elif pre_str == "FP":
         process_WTWT_mod(credits, buf, b"F.PL", b"AYER", 0x8)
-    elif pre == "CORE":
+    elif pre_str == "CORE":
         process_WTWT_mod(credits, buf, b"S.PH", b"IPPS", 0x20)
-    elif pre == "BDS":
+    elif pre_str == "BDS":
         process_WTWT_mod(credits, buf, b"DAGL", b"ISH!", 0x14)
     else:
-        # raise ValueError(f"Unknown file prefix: {pre}")
+        # raise ValueError(f"Unknown file prefix: {pre_str}")
         logger.warning(f"Unknown file prefix: {pre_str}, unable to get credits")
 
     return credits
@@ -431,6 +433,7 @@ def process_module(
 #         return hexdump(filename, 2048)
 #     else:
 #         raise ValueError("Illegal info requested")
+
 
 def get_credits(filename: str) -> Credits:
     credits: Credits

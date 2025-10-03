@@ -1,6 +1,5 @@
 from typing import Callable
 
-from main_window import MainWindow  # type: ignore
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMenu,
@@ -9,6 +8,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from PyRetroPlayer.main_window import MainWindow
 
 
 class UIManager:

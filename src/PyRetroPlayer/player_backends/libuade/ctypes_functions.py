@@ -17,7 +17,7 @@ from ctypes import (
 )
 from ctypes.util import find_library
 
-from player_backends.libuade.ctypes_classes import (  # type: ignore
+from PyRetroPlayer.player_backends.libuade.ctypes_classes import (
     uade_ext_to_format_version,
     uade_ipc,
     uade_notification,

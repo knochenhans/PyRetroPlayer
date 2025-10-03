@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 from PySide6.QtCore import (
+    QItemSelectionModel,
     QModelIndex,
     Qt,
     Signal,
@@ -22,17 +23,19 @@ from PySide6.QtWidgets import (
     QTreeView,
     QWidget,
 )
-from settings.settings import Settings  # type: ignore
 
-from playlist.column_filter_proxy import ColumnFilterProxy  # type: ignore
-from playlist.column_manager import ColumnManager  # type: ignore
-from playlist.drag_drop_reorder_proxy import DragDropReorderProxy  # type: ignore
-from playlist.playlist import Playlist  # type: ignore
-from playlist.playlist_entry import PlaylistEntry  # type: ignore
-from playlist.playlist_item_model import PlaylistItemModel  # type: ignore
-from playlist.song import Song  # type: ignore
-from playlist.song_info_dialog import SongInfoDialog  # type: ignore
-from playlist.song_library import SongLibrary  # type: ignore
+from PyRetroPlayer.playlist.column_filter_proxy import ColumnFilterProxy
+from PyRetroPlayer.playlist.column_manager import ColumnManager
+from PyRetroPlayer.playlist.drag_drop_reorder_proxy import (
+    DragDropReorderProxy,
+)
+from PyRetroPlayer.playlist.playlist import Playlist
+from PyRetroPlayer.playlist.playlist_entry import PlaylistEntry
+from PyRetroPlayer.playlist.playlist_item_model import PlaylistItemModel
+from PyRetroPlayer.playlist.song import Song
+from PyRetroPlayer.playlist.song_info_dialog import SongInfoDialog
+from PyRetroPlayer.playlist.song_library import SongLibrary
+from PyRetroPlayer.settings.settings import Settings
 
 
 class CustomItemViewStyle(QProxyStyle):
@@ -48,12 +51,12 @@ class CustomItemViewStyle(QProxyStyle):
     ):
         if (
             element == QStyle.PrimitiveElement.PE_IndicatorItemViewItemDrop
-            and not option.rect.isNull()  # type: ignore
+            and not option.rect.isNull()
         ):
             opt = QStyleOption(option)
-            opt.rect.setLeft(0)  # type: ignore
+            opt.rect.setLeft(0)
             if widget:
-                opt.rect.setRight(widget.width())  # type: ignore
+                opt.rect.setRight(widget.width())
 
             pen = painter.pen()
             pen.setWidth(3)
@@ -123,6 +126,13 @@ class PlaylistTreeView(QTreeView):
         reorder_proxy.rowsReordered.connect(playlist.set_song_order)
 
         self.setModel(reorder_proxy)
+
+        selectionModel = QItemSelectionModel(self.model())
+        selectionModel.SelectionFlag(
+            QItemSelectionModel.SelectionFlag.SelectCurrent
+            | QItemSelectionModel.SelectionFlag.Clear
+        )
+        self.setSelectionModel(selectionModel)
 
         self.get_playlist_data()
         self.set_column_widths(self.column_manager.get_column_widths())
@@ -287,6 +297,7 @@ class PlaylistTreeView(QTreeView):
             )
             if item and item.text() == entry.entry_id:
                 self.set_currently_playing_row(row)
+                self.setCurrentIndex(self.model().index(row, 0))
                 return
         logger.warning(f"Entry ID {entry.entry_id} not found in playlist view")
 

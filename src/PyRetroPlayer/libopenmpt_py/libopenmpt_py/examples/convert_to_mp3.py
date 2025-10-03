@@ -1,16 +1,17 @@
-from libopenmpt_py import libopenmpt
-from io import BytesIO
-import subprocess
 import ctypes
-import warnings
 import os
+import subprocess
+import warnings
+from io import BytesIO
+
+from PyRetroPlayer.libopenmpt_py.libopenmpt_py import libopenmpt
 
 
-def log_callback(user_data, level, message):
+def log_callback(user_data: ctypes.c_void_p, level: int, message: ctypes.c_char_p):
     pass
 
 
-def error_callback(user_data, message):
+def error_callback(user_data: ctypes.c_void_p, message: ctypes.c_char_p):
     pass
 
 
