@@ -104,6 +104,8 @@ class MainWindow(QMainWindow):
                 "next",
                 "song_info_dialog",
                 "get_random_module",
+                "lookup_modarchive",
+                "lookup_msm",
             ],
         )
 
@@ -204,17 +206,20 @@ class MainWindow(QMainWindow):
     def create_tray_menu(self) -> QMenu:
         tray_menu = QMenu(self)
 
-        # play_pause_action = QAction("Play/Pause", self)
-        # play_pause_action.triggered.connect(self.on_play_pause_pressed)
-        # tray_menu.addAction(play_pause_action)
+        from PyRetroPlayer.actions_manager import ActionsManager
 
-        # stop_action = QAction("Stop", self)
-        # stop_action.triggered.connect(self.on_stop_pressed)
-        # tray_menu.addAction(stop_action)
+        actions: List[QAction] = ActionsManager.get_actions_by_names(
+            self,
+            [
+                "play",
+                "pause",
+                "stop",
+                "previous",
+                "next",
+            ],
+        )
 
-        # next_action = QAction("Next", self)
-        # next_action.triggered.connect(self.on_next_pressed)
-        # tray_menu.addAction(next_action)
+        tray_menu.addActions(actions)
 
         tray_menu.addSeparator()
 
