@@ -146,7 +146,7 @@ class WebHelper:
         return None
 
     def lookup_modarchive_mod_url(self, song: Song) -> str:
-        logger.info(f"Looking up ModArchive URL for song: {song}")
+        logger.info(f"Looking up ModArchive URL for song: {song.file_path}")
 
         def search_modarchive(query: str, search_type: str) -> Optional[str]:
             url = f"https://modarchive.org/index.php?request=search&query={query}&submit=Find&search_type={search_type}"
