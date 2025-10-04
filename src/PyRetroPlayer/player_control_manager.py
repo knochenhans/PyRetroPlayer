@@ -73,6 +73,11 @@ class PlayerControlManager:
                     next_entry.song_id if next_entry else ""
                 )
                 if song:
+                    song_title = f"{song.file_path.split('/')[-1]}"
+                    if song.artist:
+                        song_title += f" - {song.artist}"
+                    self.main_window.show_tray_notification("Now Playing", song_title)
+                    self.main_window.update_window_title(song_title)
                     self.play_song(song)
 
                 if next_entry:

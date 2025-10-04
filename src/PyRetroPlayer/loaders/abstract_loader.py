@@ -72,7 +72,7 @@ class AbstractLoader:
         logger.info("Starting to load files...")
         self.load_songs()
 
-    def load_song(self, file_path: str) -> Optional[Song]:
+    def load_song_from_path(self, file_path: str) -> Optional[Song]:
         return None
 
     def load_songs(self) -> None:
@@ -91,7 +91,7 @@ class AbstractLoader:
             player_backend.song = song
             if player_backend.check_module():
                 logger.debug(f"Module loaded with player backend: {backend_name}")
-                song.available_backends = backend_name
+                song.available_backends = [backend_name]
                 player_backend.song = song
                 player_backend.retrieve_song_info()
                 return player_backend.song

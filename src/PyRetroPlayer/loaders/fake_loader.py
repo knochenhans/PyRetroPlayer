@@ -27,14 +27,14 @@ class FakeLoader(AbstractLoader):
 
     def load_songs(self) -> None:
         for file_path in self.file_list:
-            song = self.load_song(file_path)
+            song = self.load_song_from_path(file_path)
             if song:
                 self.songs_loaded += 1
             time.sleep(0.1)  # Simulate some loading time
         if self.songs_loaded == self.songs_to_load:
             self.all_songs_loaded()
 
-    def load_song(self, file_path: str) -> Optional[Song]:
+    def load_song_from_path(self, file_path: str) -> Optional[Song]:
         logger.debug(f"FakeLoader: Loading file: {file_path}")
 
         song: Optional[Song] = Song()

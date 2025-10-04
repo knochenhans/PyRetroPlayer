@@ -163,7 +163,7 @@ class LocalFileLoader(AbstractLoader):
 
     def load_songs(self) -> None:
         for file_name in self.file_list:
-            song = self.load_song(file_name)
+            song = self.load_song_from_path(file_name)
             if song:
                 worker = LocalFileLoaderWorker(
                     song, self.player_backends, self.player_backends_priority, self
@@ -183,7 +183,7 @@ class LocalFileLoader(AbstractLoader):
             # fut.exception(timeout=0) raises if result not ready; ignore
             pass
 
-    def load_song(self, file_path: str) -> Optional[Song]:
+    def load_song_from_path(self, file_path: str) -> Optional[Song]:
         logger.debug(f"LocalFileLoader: Loading file: {file_path}")
         if file_path:
             song: Song = Song()

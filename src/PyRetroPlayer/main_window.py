@@ -1,14 +1,17 @@
 import os
 import sys
 from typing import Any, Dict, List, Optional
+import webbrowser
 
 from appdirs import user_config_dir, user_data_dir
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction, QCloseEvent
+from PySide6.QtGui import QAction, QCloseEvent, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
+    QMenu,
     QSlider,
+    QSystemTrayIcon,
     QToolBar,
 )
 
@@ -25,6 +28,7 @@ from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.playlist.song_library import SongLibrary
 from PyRetroPlayer.settings.settings import Settings
+from PyRetroPlayer.web_helper import WebHelper
 
 
 class MainWindow(QMainWindow):
@@ -35,6 +39,8 @@ class MainWindow(QMainWindow):
 
         self.application_name: str = "PyRetroPlayer"
         self.application_version: str = "0.1.0"
+        self.icon = QIcon.fromTheme("media-playback-start")
+        self.setWindowIcon(self.icon)
 
         self.config_dir = os.path.join(user_config_dir(), self.application_name)
         os.makedirs(self.config_dir, exist_ok=True)
@@ -50,16 +56,14 @@ class MainWindow(QMainWindow):
         self.settings.ensure_default_config()
         self.settings.load()
 
-        # self.actions_: List[QAction] = []
-
         self.setWindowTitle(f"{self.application_name} v{self.application_version}")
 
         self.song_library = SongLibrary(os.path.join(self.data_dir, "song_library.db"))
 
         self.player_backends: Dict[str, Any] = {
             "LibUADE": lambda: PlayerBackendLibUADE(),
-            # "FakeBackend": lambda: FakePlayerBackend(),
             "LibOpenMPT": lambda: PlayerBackendLibOpenMPT(),
+            # "FakeBackend": lambda: FakePlayerBackend(),
         }
         self.player_backends_priorities: List[str] = [
             "LibUADE",
@@ -86,10 +90,21 @@ class MainWindow(QMainWindow):
         )
         self.file_manager = FileManager(self)
 
+        self.web_helper = WebHelper()
+
         from PyRetroPlayer.actions_manager import ActionsManager
 
         self.actions_: List[QAction] = ActionsManager.get_actions_by_names(
-            self, ["play", "pause", "stop", "previous", "next"]
+            self,
+            [
+                "play",
+                "pause",
+                "stop",
+                "previous",
+                "next",
+                "song_info_dialog",
+                "get_random_module",
+            ],
         )
 
         self.playlist_ui_manager.setup_actions()
@@ -99,9 +114,12 @@ class MainWindow(QMainWindow):
         self.icon_bar = QToolBar("Main Toolbar", self)
         self.addToolBar(self.icon_bar)
 
-        self.setup_icon_bar()
+        self.progress_slider = QSlider(Qt.Orientation.Horizontal)
+        self.volume_slider = QSlider(Qt.Orientation.Horizontal)
+        self.ui_manager.setup_icon_bar()
 
         self.load_settings()
+        self.setup_tray()
 
     def load_settings(self) -> None:
         geometry = self.settings.get("window_geometry")
@@ -134,34 +152,6 @@ class MainWindow(QMainWindow):
         # current_volume = volume_slider.value()
 
         self.settings.save()
-
-    def setup_icon_bar(self) -> None:
-        for action in self.actions_:
-            self.icon_bar.addAction(action)
-
-        self.icon_bar.addSeparator()
-
-        # Add volume slider
-        self.progress_slider = QSlider(Qt.Orientation.Horizontal)
-        self.progress_slider.setRange(0, 100)
-        self.progress_slider.setValue(0)
-        self.progress_slider.setToolTip("Playback Progress")
-        # progress_slider.valueChanged.connect(self.on_progress_changed)
-        self.icon_bar.addWidget(self.progress_slider)
-
-        self.progress_slider.sliderMoved.connect(self.player_control_manager.on_seek)
-
-        self.icon_bar.addSeparator()
-
-        # Add progess slider
-        volume_slider = QSlider(Qt.Orientation.Horizontal)
-        volume_slider.setRange(0, 100)
-        volume_slider.setValue(50)
-        volume_slider.setToolTip("Volume")
-        volume_slider.setMaximumWidth(100)
-
-        volume_slider.sliderMoved.connect(self.player_control_manager.on_volume_changed)
-        self.icon_bar.addWidget(volume_slider)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.save_settings()
@@ -197,6 +187,91 @@ class MainWindow(QMainWindow):
 
     def on_all_songs_loaded(self) -> None:
         self.file_manager.on_all_songs_loaded()
+
+    def setup_tray(self) -> None:
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(QIcon.fromTheme("media-playback-start"))
+
+        # Create tray menu
+        self.tray_menu = self.create_tray_menu()
+        self.tray_icon.setContextMenu(self.tray_menu)
+        self.tray_icon.show()
+
+        # Minimize to tray
+        self.tray_icon.activated.connect(self.tray_icon_activated)
+        self.hide()
+
+    def create_tray_menu(self) -> QMenu:
+        tray_menu = QMenu(self)
+
+        # play_pause_action = QAction("Play/Pause", self)
+        # play_pause_action.triggered.connect(self.on_play_pause_pressed)
+        # tray_menu.addAction(play_pause_action)
+
+        # stop_action = QAction("Stop", self)
+        # stop_action.triggered.connect(self.on_stop_pressed)
+        # tray_menu.addAction(stop_action)
+
+        # next_action = QAction("Next", self)
+        # next_action.triggered.connect(self.on_next_pressed)
+        # tray_menu.addAction(next_action)
+
+        tray_menu.addSeparator()
+
+        quit_action = QAction("Quit", self)
+        quit_action.triggered.connect(self.close)
+        tray_menu.addAction(quit_action)
+
+        return tray_menu
+
+    def show_tray_notification(self, title: str, message: str) -> None:
+        self.tray_icon.showMessage(
+            title,
+            message,
+            self.icon,
+            10000,
+        )
+        self.tray_icon.setToolTip(message)
+
+    def update_window_title(self, title: str) -> None:
+        self.setWindowTitle(f"{self.application_name} - {title}")
+
+    def tray_icon_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            if self.isVisible():
+                self.hide()
+            else:
+                self.show()
+
+    def on_lookup_modarchive(self) -> None:
+        current_tree_view = self.playlist_ui_manager.get_current_tree_view()
+        if current_tree_view is None:
+            return
+
+        current_song = current_tree_view.get_current_song()
+
+        if current_song is None:
+            return
+
+        url = self.web_helper.lookup_modarchive_mod_url(current_song)
+
+        if url:
+            webbrowser.open(url)
+
+    def on_lookup_msm(self) -> None:
+        current_tree_view = self.playlist_ui_manager.get_current_tree_view()
+        if current_tree_view is None:
+            return
+
+        current_song = current_tree_view.get_current_song()
+
+        if current_song is None:
+            return
+
+        url = self.web_helper.lookup_msm_mod_url(current_song)
+
+        if url:
+            webbrowser.open(url)
 
 
 if __name__ == "__main__":

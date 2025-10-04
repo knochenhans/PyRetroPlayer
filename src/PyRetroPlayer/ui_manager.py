@@ -1,7 +1,9 @@
 from typing import Callable
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
+    QLabel,
     QMenu,
     QMenuBar,
     QProgressBar,
@@ -16,6 +18,7 @@ class UIManager:
     def __init__(self, main_window: MainWindow) -> None:
         self.main_window = main_window
         self.progress_bar: QProgressBar
+        self.time_label: QLabel  # Add time label attribute
 
         self.setup_central_widget()
 
@@ -109,3 +112,52 @@ class UIManager:
             self.main_window.progress_slider.setMaximum(module_length)
             self.main_window.progress_slider.setValue(current_position)
             # self.progress_bar.update()
+
+            self.update_time_label(current_position, module_length)
+
+    def setup_icon_bar(self) -> None:
+        for action in self.main_window.actions_:
+            self.main_window.icon_bar.addAction(action)
+
+        self.main_window.icon_bar.addSeparator()
+
+        # Add progress slider
+        # self.main_window.progress_slider = QSlider(Qt.Orientation.Horizontal)
+        self.main_window.progress_slider.setRange(0, 100)
+        self.main_window.progress_slider.setValue(0)
+        self.main_window.progress_slider.setToolTip("Playback Progress")
+        # progress_slider.valueChanged.connect(self.on_progress_changed)
+        self.main_window.icon_bar.addWidget(self.main_window.progress_slider)
+
+        # Add time label for 00:00/00:00 display
+        self.time_label = QLabel("00:00/00:00")
+        self.time_label.setMinimumWidth(80)
+        self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.main_window.icon_bar.addWidget(self.time_label)
+
+        self.main_window.progress_slider.sliderMoved.connect(
+            self.main_window.player_control_manager.on_seek
+        )
+
+        self.main_window.icon_bar.addSeparator()
+
+        # Add volume slider
+        # self.main_window.volume_slider = QSlider(Qt.Orientation.Horizontal)
+        self.main_window.volume_slider.setRange(0, 100)
+        self.main_window.volume_slider.setValue(50)
+        self.main_window.volume_slider.setToolTip("Volume")
+        self.main_window.volume_slider.setMaximumWidth(100)
+
+        self.main_window.volume_slider.sliderMoved.connect(
+            self.main_window.player_control_manager.on_volume_changed
+        )
+        self.main_window.icon_bar.addWidget(self.main_window.volume_slider)
+
+    def update_time_label(self, current_ms: int, total_ms: int) -> None:
+        def format_time(ms: int) -> str:
+            secs = ms // 1000
+            mins = secs // 60
+            secs = secs % 60
+            return f"{mins:02}:{secs:02}"
+
+        self.time_label.setText(f"{format_time(current_ms)}/{format_time(total_ms)}")

@@ -51,6 +51,27 @@ class ActionsManager:
             "Show information about the current song",
             lambda main_window: main_window.playlist_ui_manager.show_song_info_dialog,
         ),
+        (
+            "get_random_module",
+            "system-search",
+            "Get Random Module",
+            "Fetch and play a random module from the web",
+            lambda main_window: main_window.file_manager.get_random_module,
+        ),
+        (
+            "lookup_modarchive",
+            "view-reveal",
+            "Lookup on ModArchive",
+            "Lookup current song on ModArchive",
+            lambda main_window: main_window.on_lookup_modarchive,
+        ),
+        (
+            "lookup_msm",
+            "view-reveal",
+            "Lookup on .mod Sample Master",
+            "Lookup current song on .mod Sample Master",
+            lambda main_window: main_window.on_lookup_msm,
+        ),
     ]
 
     @staticmethod

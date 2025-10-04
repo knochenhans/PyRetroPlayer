@@ -1,23 +1,29 @@
+import threading
 from abc import abstractmethod
-from PySide6.QtCore import QThread, Signal
-from typing import Optional
+from typing import Callable, Optional
 
-from player_backends.Song import Song
+from PyRetroPlayer.playlist.song import Song
 
 
-class ModuleLoaderThread(QThread):
-    module_loaded = Signal(Song)
-
-    def __init__(self) -> None:
+class ModuleLoaderThread(threading.Thread):
+    def __init__(
+        self,
+        module_loaded_callback: Optional[Callable[[Song], None]] = None,
+    ) -> None:
         super().__init__()
+        self.module_loaded_callback = module_loaded_callback
+        self._terminate = threading.Event()
 
     def run(self) -> None:
+        if self._terminate.is_set():
+            return
         song: Optional[Song] = self.load_module()
-        if song:
-            self.module_loaded.emit(song)
-        else:
-            self.module_loaded.emit({})
+        if song and self.module_loaded_callback:
+            self.module_loaded_callback(song)
 
     @abstractmethod
     def load_module(self) -> Optional[Song]:
         pass
+
+    def terminate(self) -> None:
+        self._terminate.set()

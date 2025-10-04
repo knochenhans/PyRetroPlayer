@@ -1,15 +1,14 @@
-from PySide6.QtCore import QThread, Signal
-from typing import Optional
+import threading
+from typing import Callable, Optional
 
-from player_backends.Song import Song
-from playing_modes import ModArchiveSource, PlayingMode, PlayingSource
-from web_helper import WebHelper
 from loguru import logger
 
+from PyRetroPlayer.playing_modes import ModArchiveSource, PlayingMode, PlayingSource
+from PyRetroPlayer.playlist.song import Song
+from PyRetroPlayer.web_helper import WebHelper
 
-class ModArchiveRandomModuleFetcherThread(QThread):
-    module_fetched = Signal(Song)
 
+class ModArchiveRandomModuleFetcherThread(threading.Thread):
     def __init__(
         self,
         song: Song,
@@ -19,9 +18,9 @@ class ModArchiveRandomModuleFetcherThread(QThread):
         web_helper: WebHelper,
         artist_name: str | None = None,
         member_id: int | None = None,
+        module_fetched_callback: Optional[Callable[[Song], None]] = None,
     ) -> None:
         super().__init__()
-
         self.song = song
         self.playing_mode = current_playing_mode
         self.playing_source = current_playing_source
@@ -29,17 +28,19 @@ class ModArchiveRandomModuleFetcherThread(QThread):
         self.web_helper = web_helper
         self.artist_name = artist_name
         self.member_id = member_id
+        self.module_fetched_callback = module_fetched_callback
+        self._terminate = threading.Event()
 
     def run(self) -> None:
+        if self._terminate.is_set():
+            logger.info("Thread terminated before run.")
+            return
         self.fetch_random_module_id()
-
-        if self.song:
-            self.module_fetched.emit(self.song)
-        else:
-            self.module_fetched.emit({})
+        if self.module_fetched_callback:
+            self.module_fetched_callback(self.song)
 
     def fetch_random_module_id(self) -> None:
-        id: int | None = None
+        id: Optional[int] = None
 
         if self.playing_mode == PlayingMode.RANDOM:
             if self.playing_source == PlayingSource.MODARCHIVE:
@@ -60,8 +61,8 @@ class ModArchiveRandomModuleFetcherThread(QThread):
                                 self.artist_name
                             )
             if id:
-                self.song.modarchive_id = id
+                self.song.custom_metadata["modarchive_id"] = id
 
     def terminate(self) -> None:
         logger.info("Terminating ModArchiveRandomModuleFetcherThread")
-        return super().terminate()
+        self._terminate.set()

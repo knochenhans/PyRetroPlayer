@@ -97,7 +97,7 @@ class PlaylistTreeView(QTreeView):
 
         self.previous_row = -1
 
-        self.setSelectionBehavior(QTreeView.SelectionBehavior.SelectRows)
+        # self.setSelectionBehavior(QTreeView.SelectionBehavior.SelectRows)
         self.setDragDropMode(QTreeView.DragDropMode.InternalMove)
         self.setDragDropOverwriteMode(False)
         # self.setDefaultDropAction(Qt.DropAction.MoveAction)
