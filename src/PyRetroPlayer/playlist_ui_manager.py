@@ -77,6 +77,7 @@ class PlaylistUIManager:
         playlist.name = playlist.name or ""
         self.tab_widget.addTab(playlist_view, playlist.name)
         self.column_managers[playlist.id] = column_manager
+        playlist_view.select_current_song(playlist.current_song_index)
         playlist_view.item_double_clicked.connect(
             lambda index: self.on_playlist_item_double_clicked(index, playlist_view)
         )

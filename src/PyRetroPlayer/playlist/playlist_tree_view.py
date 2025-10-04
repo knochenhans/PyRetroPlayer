@@ -398,3 +398,11 @@ class PlaylistTreeView(QTreeView):
         if current_song:
             dialog = SongInfoDialog(current_song, self)
             dialog.exec()
+
+    def select_current_song(self, index: int) -> None:
+        if 0 <= index < self.source_model.rowCount():
+            self.setCurrentIndex(self.model().index(index, 0))
+            self.scrollTo(
+                self.model().index(index, 0),
+                QAbstractItemView.ScrollHint.PositionAtCenter,
+            )
