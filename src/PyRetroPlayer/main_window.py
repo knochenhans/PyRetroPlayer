@@ -1,14 +1,9 @@
 import os
 import sys
-import threading
 import webbrowser
 from typing import Any, Dict, List, Optional
 
 from appdirs import user_config_dir, user_data_dir
-from mpris_server import Metadata
-from mpris_server.adapters import MprisAdapter
-from mpris_server.events import EventAdapter
-from mpris_server.server import Server
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QCloseEvent, QIcon
 from PySide6.QtWidgets import (
@@ -32,107 +27,6 @@ from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.playlist.song_library import SongLibrary
 from PyRetroPlayer.settings.settings import Settings
 from PyRetroPlayer.web_helper import WebHelper
-
-
-class PlayerController:
-    def __init__(self):
-        self.state = "Stopped"  # or "Playing", "Paused"
-        self.track_title = ""
-        self.track_id = "track0"
-
-    def play(self):
-        print("Play called")
-        self.state = "Playing"
-        # your code to start / resume playing
-
-    def pause(self):
-        print("Pause called")
-        self.state = "Paused"
-        # code to pause
-
-    def stop(self):
-        print("Stop called")
-        self.state = "Stopped"
-        # code to stop
-
-    def next(self):
-        print("Next called")
-        # code to skip
-
-    def get_metadata(self) -> Dict[str, Any]:
-        # Return metadata needed for MPRIS
-        return {
-            "mpris:trackid": f"/org/mpris/MediaPlayer2/Track/{self.track_id}",
-            "xesam:title": self.track_title,
-            "mpris:artUrl": "",
-            "mpris:length": 0,  # length in microseconds
-            "xesam:artist": ["Unknown"],
-        }
-
-    def get_playback_status(self):
-        return (
-            "Playing"
-            if self.state == "Playing"
-            else "Paused" if self.state == "Paused" else "Stopped"
-        )
-
-
-class MyAdapter(MprisAdapter):
-    def __init__(self, controller: PlayerController):
-        super().__init__()
-        self.controller = controller
-
-    # Capabilities: must be methods that return bool
-    def can_go_next(self) -> bool:
-        return True
-
-    def can_play(self) -> bool:
-        return True
-
-    def can_pause(self) -> bool:
-        return True
-
-    def can_stop(self) -> bool:
-        return True
-
-    # Core metadata and state
-    def metadata(self) -> Metadata:
-        return Metadata(**self.controller.get_metadata())
-
-    def playback_status(self) -> str:
-        state = self.controller.get_playback_status()
-        if state is None:
-            return "Stopped"  # Default fallback
-        if state.lower() in ("playing", "play"):
-            return "Playing"
-        elif state.lower() in ("paused", "pause"):
-            return "Paused"
-        else:
-            return "Stopped"
-
-    # Playback actions
-    def play(self) -> None:
-        self.controller.play()
-
-    def pause(self) -> None:
-        self.controller.pause()
-
-    def stop(self) -> None:
-        self.controller.stop()
-
-    def next(self) -> None:
-        self.controller.next()
-
-
-def start_mpris(controller: PlayerController) -> tuple[Server, MprisAdapter]:
-    adapter = MyAdapter(controller)
-    mpris: Server = Server("PyRetroPlayer", adapter=adapter)
-
-    # Run the D-Bus server in its own thread or in main loop
-    thread = threading.Thread(target=mpris.loop, daemon=True)
-    thread.start()
-
-    return (mpris, adapter)
 
 
 class MainWindow(QMainWindow):
@@ -226,9 +120,6 @@ class MainWindow(QMainWindow):
 
         self.load_settings()
         self.ui_manager.setup_tray()
-
-        controller = PlayerController()
-        mpris, adapter = start_mpris(controller)
 
     def load_settings(self) -> None:
         geometry = self.settings.get("window_geometry")
