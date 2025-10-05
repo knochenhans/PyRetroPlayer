@@ -201,3 +201,21 @@ class WebHelper:
                 logger.debug("Current module is a member favorite")
 
         return is_favorite
+
+    def download_favorite_modules(self, member_id: int, temp_dir: str) -> List[str]:
+        module_ids = self.get_member_module_id_list(member_id)
+        downloaded_files: List[str] = []
+
+        for module_id in module_ids:
+            file_path = os.path.join(temp_dir, f"{module_id}.mod")
+            if not os.path.exists(file_path):
+                logger.info(f"Downloading favorite module: {module_id}")
+                downloaded_file_path = self.download_module_file(
+                    module_id, os.path.dirname(file_path)
+                )
+                if downloaded_file_path is not None:
+                    downloaded_files.append(downloaded_file_path)
+            else:
+                logger.info(f"Favorite module already downloaded: {module_id}")
+                downloaded_files.append(file_path)
+        return downloaded_files

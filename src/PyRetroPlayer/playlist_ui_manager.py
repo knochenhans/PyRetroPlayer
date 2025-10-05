@@ -179,7 +179,7 @@ class PlaylistUIManager:
     def setup_actions(self) -> None:
         actions: List[QAction] = ActionsManager.get_actions_by_names(
             self.main_window,
-            ["song_info_dialog", "lookup_msm", "lookup_modarchive"],
+            ["song_info_dialog", "lookup_msm", "lookup_modarchive", "download_favorites"],
         )
         for i in range(self.tab_widget.count()):
             widget = self.tab_widget.widget(i)

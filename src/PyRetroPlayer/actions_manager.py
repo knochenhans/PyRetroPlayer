@@ -72,6 +72,13 @@ class ActionsManager:
             "Lookup current song on .mod Sample Master",
             lambda main_window: main_window.on_lookup_msm,
         ),
+        (
+            "download_favorites",
+            "folder-download",
+            "Download Favorites",
+            "Download favorite modules of the current member",
+            lambda main_window: main_window.download_favorite_modules,
+        ),
     ]
 
     @staticmethod

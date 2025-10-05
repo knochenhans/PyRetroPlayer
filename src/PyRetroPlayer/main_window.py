@@ -104,6 +104,7 @@ class MainWindow(QMainWindow):
                 "get_random_module",
                 "lookup_modarchive",
                 "lookup_msm",
+                "download_favorites",
             ],
         )
 
@@ -217,6 +218,32 @@ class MainWindow(QMainWindow):
 
         if url:
             webbrowser.open(url)
+
+    def download_favorite_modules(self) -> None:
+        member_id = self.settings.get("modarchive_member_id", 0)
+        if member_id == 0:
+            return
+
+        favorites_dir = os.path.join(self.data_dir, "favorites")
+        os.makedirs(favorites_dir, exist_ok=True)
+
+        downloaded_files = self.web_helper.download_favorite_modules(
+            member_id, favorites_dir
+        )
+
+        if downloaded_files:
+            current_tree_view = self.playlist_ui_manager.get_current_tree_view()
+            if current_tree_view is None:
+                return
+
+            current_index = self.playlist_ui_manager.tab_widget.currentIndex()
+            if current_index == -1:
+                return
+
+            playlist = self.playlist_ui_manager.playlist_manager.playlists[
+                current_index
+            ]
+            self.load_files(downloaded_files, playlist)
 
 
 if __name__ == "__main__":
