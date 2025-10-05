@@ -8,6 +8,10 @@ class AudioBackend(ABC):
         self.buffersize: int = buffersize
 
     @abstractmethod
+    def reset(self) -> None:
+        pass
+
+    @abstractmethod
     def write(self, data: bytes) -> None:
         pass
 

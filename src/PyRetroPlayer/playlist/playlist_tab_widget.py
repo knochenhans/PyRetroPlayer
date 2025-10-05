@@ -6,9 +6,7 @@ from PySide6.QtWidgets import QMainWindow, QMenu, QTabWidget, QToolButton
 from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.playlist_manager import PlaylistManager
 from PyRetroPlayer.playlist.playlist_tab_bar import PlaylistTabBar
-from PyRetroPlayer.playlist.playlist_tab_bar_edit import (
-    PlaylistTabBarEdit,
-)
+
 from PyRetroPlayer.playlist.playlist_tree_view import PlaylistTreeView
 
 
@@ -74,6 +72,10 @@ class PlaylistTabWidget(QTabWidget):
 
     @Slot()
     def doubleClicked(self, index: int) -> None:
+        from PyRetroPlayer.playlist.playlist_tab_bar_edit import (
+            PlaylistTabBarEdit,
+        )
+
         tab_bar = self.tabBar()
         if isinstance(tab_bar, PlaylistTabBar):
             tab_bar.edit_index = index

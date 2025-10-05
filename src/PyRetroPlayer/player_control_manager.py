@@ -76,8 +76,10 @@ class PlayerControlManager:
                     song_title = f"{song.file_path.split('/')[-1]}"
                     if song.artist:
                         song_title += f" - {song.artist}"
-                    self.main_window.show_tray_notification("Now Playing", song_title)
-                    self.main_window.update_window_title(song_title)
+                    self.main_window.ui_manager.show_tray_notification(
+                        "Now Playing", song_title
+                    )
+                    self.main_window.ui_manager.update_window_title(song_title)
                     self.play_song(song)
 
                 if next_entry:
@@ -171,6 +173,16 @@ class PlayerControlManager:
         self.play_queue()
 
     def play_queue(self) -> None:
+        if self.queue_manager.is_empty():
+            if self.current_playlist:
+                num_entries = self.add_more_songs_to_queue(
+                    self.current_playlist, self.current_playlist_index
+                )
+
+                if num_entries == 0:
+                    logger.info("No more songs to add to the queue, stopping playback.")
+                    self.set_player_state(self.PlayerState.STOPPED)
+                    return
         self.set_player_state(self.PlayerState.PLAYING)
         # song = self.queue_manager.pop_next_song()
 

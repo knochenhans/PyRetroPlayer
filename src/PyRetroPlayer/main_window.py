@@ -1,17 +1,20 @@
 import os
 import sys
-from typing import Any, Dict, List, Optional
+import threading
 import webbrowser
+from typing import Any, Dict, List, Optional
 
 from appdirs import user_config_dir, user_data_dir
+from mpris_server import Metadata
+from mpris_server.adapters import MprisAdapter
+from mpris_server.events import EventAdapter
+from mpris_server.server import Server
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QCloseEvent, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
-    QMenu,
     QSlider,
-    QSystemTrayIcon,
     QToolBar,
 )
 
@@ -29,6 +32,107 @@ from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.playlist.song_library import SongLibrary
 from PyRetroPlayer.settings.settings import Settings
 from PyRetroPlayer.web_helper import WebHelper
+
+
+class PlayerController:
+    def __init__(self):
+        self.state = "Stopped"  # or "Playing", "Paused"
+        self.track_title = ""
+        self.track_id = "track0"
+
+    def play(self):
+        print("Play called")
+        self.state = "Playing"
+        # your code to start / resume playing
+
+    def pause(self):
+        print("Pause called")
+        self.state = "Paused"
+        # code to pause
+
+    def stop(self):
+        print("Stop called")
+        self.state = "Stopped"
+        # code to stop
+
+    def next(self):
+        print("Next called")
+        # code to skip
+
+    def get_metadata(self) -> Dict[str, Any]:
+        # Return metadata needed for MPRIS
+        return {
+            "mpris:trackid": f"/org/mpris/MediaPlayer2/Track/{self.track_id}",
+            "xesam:title": self.track_title,
+            "mpris:artUrl": "",
+            "mpris:length": 0,  # length in microseconds
+            "xesam:artist": ["Unknown"],
+        }
+
+    def get_playback_status(self):
+        return (
+            "Playing"
+            if self.state == "Playing"
+            else "Paused" if self.state == "Paused" else "Stopped"
+        )
+
+
+class MyAdapter(MprisAdapter):
+    def __init__(self, controller: PlayerController):
+        super().__init__()
+        self.controller = controller
+
+    # Capabilities: must be methods that return bool
+    def can_go_next(self) -> bool:
+        return True
+
+    def can_play(self) -> bool:
+        return True
+
+    def can_pause(self) -> bool:
+        return True
+
+    def can_stop(self) -> bool:
+        return True
+
+    # Core metadata and state
+    def metadata(self) -> Metadata:
+        return Metadata(**self.controller.get_metadata())
+
+    def playback_status(self) -> str:
+        state = self.controller.get_playback_status()
+        if state is None:
+            return "Stopped"  # Default fallback
+        if state.lower() in ("playing", "play"):
+            return "Playing"
+        elif state.lower() in ("paused", "pause"):
+            return "Paused"
+        else:
+            return "Stopped"
+
+    # Playback actions
+    def play(self) -> None:
+        self.controller.play()
+
+    def pause(self) -> None:
+        self.controller.pause()
+
+    def stop(self) -> None:
+        self.controller.stop()
+
+    def next(self) -> None:
+        self.controller.next()
+
+
+def start_mpris(controller: PlayerController) -> tuple[Server, MprisAdapter]:
+    adapter = MyAdapter(controller)
+    mpris: Server = Server("PyRetroPlayer", adapter=adapter)
+
+    # Run the D-Bus server in its own thread or in main loop
+    thread = threading.Thread(target=mpris.loop, daemon=True)
+    thread.start()
+
+    return (mpris, adapter)
 
 
 class MainWindow(QMainWindow):
@@ -121,7 +225,10 @@ class MainWindow(QMainWindow):
         self.ui_manager.setup_icon_bar()
 
         self.load_settings()
-        self.setup_tray()
+        self.ui_manager.setup_tray()
+
+        controller = PlayerController()
+        mpris, adapter = start_mpris(controller)
 
     def load_settings(self) -> None:
         geometry = self.settings.get("window_geometry")
@@ -189,64 +296,6 @@ class MainWindow(QMainWindow):
 
     def on_all_songs_loaded(self) -> None:
         self.file_manager.on_all_songs_loaded()
-
-    def setup_tray(self) -> None:
-        self.tray_icon = QSystemTrayIcon(self)
-        self.tray_icon.setIcon(QIcon.fromTheme("media-playback-start"))
-
-        # Create tray menu
-        self.tray_menu = self.create_tray_menu()
-        self.tray_icon.setContextMenu(self.tray_menu)
-        self.tray_icon.show()
-
-        # Minimize to tray
-        self.tray_icon.activated.connect(self.tray_icon_activated)
-        self.hide()
-
-    def create_tray_menu(self) -> QMenu:
-        tray_menu = QMenu(self)
-
-        from PyRetroPlayer.actions_manager import ActionsManager
-
-        actions: List[QAction] = ActionsManager.get_actions_by_names(
-            self,
-            [
-                "play",
-                "pause",
-                "stop",
-                "previous",
-                "next",
-            ],
-        )
-
-        tray_menu.addActions(actions)
-
-        tray_menu.addSeparator()
-
-        quit_action = QAction("Quit", self)
-        quit_action.triggered.connect(self.close)
-        tray_menu.addAction(quit_action)
-
-        return tray_menu
-
-    def show_tray_notification(self, title: str, message: str) -> None:
-        self.tray_icon.showMessage(
-            title,
-            message,
-            self.icon,
-            10000,
-        )
-        self.tray_icon.setToolTip(message)
-
-    def update_window_title(self, title: str) -> None:
-        self.setWindowTitle(f"{self.application_name} - {title}")
-
-    def tray_icon_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
-        if reason == QSystemTrayIcon.ActivationReason.Trigger:
-            if self.isVisible():
-                self.hide()
-            else:
-                self.show()
 
     def on_lookup_modarchive(self) -> None:
         current_tree_view = self.playlist_ui_manager.get_current_tree_view()

@@ -80,6 +80,8 @@ class PlayerThread(threading.Thread):
             self.on_song_finished()
             logger.debug("Song finished")
 
+        self.audio_backend.reset()
+
         self.player_backend.free_module()
         logger.debug("Playback stopped")
 

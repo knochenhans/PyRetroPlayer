@@ -86,10 +86,37 @@ class SongLibrary:
                     )
                     return song.id
                 except sqlite3.IntegrityError as e:
-                    logger.warning(
-                        f"Song not added due to integrity error: {e} (MD5: {song.md5}, SHA1: {song.sha1})"
-                    )
-                    return ""
+                    if "UNIQUE constraint failed" in str(e):
+                        # Find the existing song by md5/sha1 or file_path and return its ID
+                        cur.execute(
+                            "SELECT id FROM songs WHERE md5 = ? AND sha1 = ?",
+                            (song.md5, song.sha1),
+                        )
+                        row = cur.fetchone()
+                        if row:
+                            logger.info(
+                                f"Song already exists (MD5/SHA1): {song.file_path} (ID: {row['id']}). Not adding duplicate."
+                            )
+                            return row["id"]
+                        cur.execute(
+                            "SELECT id FROM songs WHERE file_path = ?",
+                            (song.file_path,),
+                        )
+                        row = cur.fetchone()
+                        if row:
+                            logger.info(
+                                f"Song already exists (file_path): {song.file_path} (ID: {row['id']}). Not adding duplicate."
+                            )
+                            return row["id"]
+                        logger.warning(
+                            f"Song not added due to integrity error: {e} (MD5: {song.md5}, SHA1: {song.sha1})"
+                        )
+                        return ""
+                    else:
+                        logger.warning(
+                            f"Song not added due to integrity error: {e} (MD5: {song.md5}, SHA1: {song.sha1})"
+                        )
+                        return ""
 
     def remove_song(self, song_id: str) -> None:
         with self.conn as conn:

@@ -1,19 +1,18 @@
 import ctypes
 from ctypes import (
-    c_uint32,
+    POINTER,
+    c_char_p,
+    c_double,
+    c_float,
+    c_int,
+    c_int16,
     c_int32,
     c_int64,
-    c_float,
-    c_int16,
-    c_void_p,
-    c_double,
-    c_char_p,
-    c_uint8,
-    c_int,
     c_size_t,
+    c_uint8,
+    c_uint32,
     c_uint64,
-    Structure,
-    POINTER,
+    c_void_p,
 )
 from ctypes.util import find_library
 
@@ -22,9 +21,9 @@ if not libopenmpt_path:
     raise OSError("libopenmpt library not found")
 LIBOPENMPT = ctypes.cdll.LoadLibrary(libopenmpt_path)
 
-LIBOPENMPT_STREAM_CALLBACKS_BUFFER = None
-LIBOPENMPT_STREAM_CALLBACKS_FD = None
-LIBOPENMPT_STREAM_CALLBACKS_FILE = None
+LIBOPENMPT_STREAM_CALLBACKS_BUFFER = c_void_p()
+LIBOPENMPT_STREAM_CALLBACKS_FD = c_void_p()
+LIBOPENMPT_STREAM_CALLBACKS_FILE = c_void_p()
 OPENMPT_ERROR_BASE = 256
 OPENMPT_ERROR_ARGUMENT_NULL_POINTER = OPENMPT_ERROR_BASE + 103
 OPENMPT_ERROR_DOMAIN = OPENMPT_ERROR_BASE + 41
@@ -61,7 +60,12 @@ OPENMPT_PROBE_FILE_HEADER_RESULT_WANTMOREDATA = -1
 OPENMPT_STREAM_SEEK_CUR = 1
 OPENMPT_STREAM_SEEK_END = 2
 OPENMPT_STREAM_SEEK_SET = 0
-LIBOPENMPT_DEPRECATED_STRING = lambda string: string
+
+
+def LIBOPENMPT_DEPRECATED_STRING(string: str) -> str:
+    return string
+
+
 OPENMPT_STRING_BUILD = LIBOPENMPT_DEPRECATED_STRING("build")
 OPENMPT_STRING_CONTACT = LIBOPENMPT_DEPRECATED_STRING("contact")
 OPENMPT_STRING_CORE_VERSION = LIBOPENMPT_DEPRECATED_STRING("core_version")
@@ -359,9 +363,7 @@ openmpt_module_error_get_last.argtypes = [
 ]
 openmpt_module_error_get_last.restype = c_int
 
-openmpt_module_error_get_last_message = (
-    LIBOPENMPT.openmpt_module_error_get_last_message
-)
+openmpt_module_error_get_last_message = LIBOPENMPT.openmpt_module_error_get_last_message
 openmpt_module_error_get_last_message.argtypes = [
     POINTER(c_void_p),  # mod
 ]
@@ -509,9 +511,7 @@ openmpt_module_get_duration_seconds.argtypes = [
 ]
 openmpt_module_get_duration_seconds.restype = c_double
 
-openmpt_module_get_instrument_name = (
-    LIBOPENMPT.openmpt_module_get_instrument_name
-)
+openmpt_module_get_instrument_name = LIBOPENMPT.openmpt_module_get_instrument_name
 openmpt_module_get_instrument_name.argtypes = [
     POINTER(c_void_p),  # mod
     c_int32,  # index

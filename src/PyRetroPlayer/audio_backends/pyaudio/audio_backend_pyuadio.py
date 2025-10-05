@@ -7,7 +7,7 @@ from PyRetroPlayer.audio_backends.audio_backend import AudioBackend
 
 
 class AudioBackendPyAudio(AudioBackend):
-    def __init__(self, samplerate: int = 44100, buffersize: int = 1024) -> None:
+    def __init__(self, samplerate: int = 44100, buffersize: int = 512) -> None:
         self.samplerate: int = samplerate
         self.buffersize: int = buffersize
         self.buffer: bytes = bytes(self.buffersize * 2 * 2)
@@ -27,11 +27,18 @@ class AudioBackendPyAudio(AudioBackend):
             buffersize,
         )
 
+    def reset(self) -> None:
+        if self.stream.is_active():
+            self.stream.stop_stream()
+        self.stream.start_stream()
+
     def write(self, data: bytes) -> None:
         self.stream.write(data)
 
     def stop(self) -> None:
         self.stream.stop_stream()
+        if self.stream.is_active():
+            self.stream.stop_stream()
         self.stream.close()
         self.p.terminate()
         logger.debug("PyAudio AudioBackend stopped")

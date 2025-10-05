@@ -60,14 +60,14 @@ class ActionsManager:
         ),
         (
             "lookup_modarchive",
-            "view-reveal",
+            "system-search",
             "Lookup on ModArchive",
             "Lookup current song on ModArchive",
             lambda main_window: main_window.on_lookup_modarchive,
         ),
         (
             "lookup_msm",
-            "view-reveal",
+            "system-search",
             "Lookup on .mod Sample Master",
             "Lookup current song on .mod Sample Master",
             lambda main_window: main_window.on_lookup_msm,

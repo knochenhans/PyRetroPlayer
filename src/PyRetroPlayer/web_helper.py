@@ -184,3 +184,20 @@ class WebHelper:
             if response.status_code == 200:
                 return url
         return ""
+
+    def check_favorite(self, member_id: int, song: Song) -> bool:
+        # Check if the module is the current members favorite
+        member_favorites_id_list = self.get_member_module_id_list(member_id)
+
+        is_favorite = False
+
+        if song.custom_metadata.get("modarchive_id"):
+            is_favorite = (
+                song.custom_metadata["modarchive_id"] in member_favorites_id_list
+            )
+            # self.ui_manager.set_favorite_button_state(is_favorite)
+
+            if is_favorite:
+                logger.debug("Current module is a member favorite")
+
+        return is_favorite
