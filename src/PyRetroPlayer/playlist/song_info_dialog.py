@@ -1,18 +1,31 @@
 from typing import Dict, List, Optional
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QDialog, QTreeView, QVBoxLayout, QWidget
+from PySide6.QtGui import QFont, QStandardItem, QStandardItemModel
+from PySide6.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QTreeView,
+    QWidget,
+)
 
 from PyRetroPlayer.playlist.song import Song
+from PyRetroPlayer.UI.font_manager import FontManager
 
 
 class SongInfoDialog(QDialog):
-    def __init__(self, song: Song, parent: Optional[QWidget] = None):
+    def __init__(
+        self,
+        song: Song,
+        font_manager: FontManager,
+        parent: Optional[QWidget] = None,
+    ) -> None:
         super().__init__(parent)
         self.song = song
+
         self.setWindowTitle("Song Information")
-        self.setMinimumSize(400, 300)
+        self.setMinimumSize(800, 610)
 
         # Add ListView to display song information
         self.list_view = QTreeView(self)
@@ -24,13 +37,30 @@ class SongInfoDialog(QDialog):
         self.model.setHeaderData(0, Qt.Orientation.Horizontal, "Field")
         self.model.setHeaderData(1, Qt.Orientation.Horizontal, "Value")
         self.list_view.setModel(self.model)
+
+        # Add multiline text window to the right
+        self.message_text = QLabel()
+        self.message_text.setMinimumWidth(200)
+
+        self.message_font = font_manager.font_db.font(
+            "TopazPlus a600a1200a4000", "Regular", 12
+        )
+        self.message_font.setStyleStrategy(QFont.StyleStrategy.PreferBitmap)
+        self.message_font.setFixedPitch(True)
+        self.message_font.setKerning(False)
+        self.message_font.setHintingPreference(QFont.HintingPreference.PreferNoHinting)
+        self.message_font.setStyleHint(QFont.StyleHint.TypeWriter)
+
+        self.message_text.setFont(self.message_font)
+
+        # Use horizontal layout to make list view and message window side by side
+        h_layout = QHBoxLayout(self)
+        h_layout.addWidget(self.list_view)
+        h_layout.addWidget(self.message_text)
+        self.setLayout(h_layout)
+
         self.populate_model()
         self.list_view.resizeColumnToContents(0)
-
-        # Use layout to make list view scale with dialog
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.list_view)
-        self.setLayout(layout)
 
     def populate_model(self):
         fields = {
@@ -55,11 +85,14 @@ class SongInfoDialog(QDialog):
             value_item = QStandardItem(value)
             self.model.appendRow([field_item, value_item])
 
-        # Add custom metadata as individual rows
+        # Add custom metadata as individual rows, except for "message"
         def add_metadata_rows(
             key: str, value: str | List[str] | Dict[str, str], prefix: str = ""
         ):
             display_key = f"{prefix}{key.capitalize()}" if prefix else key.capitalize()
+            if key.lower() == "message":
+                self.message_text.setText(str(value))
+                return
             if isinstance(value, dict):
                 for subkey, subval in value.items():
                     add_metadata_rows(subkey, subval, prefix=f"{display_key}: ")

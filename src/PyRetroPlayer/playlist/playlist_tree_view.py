@@ -31,7 +31,6 @@ from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.playlist_entry import PlaylistEntry
 from PyRetroPlayer.playlist.playlist_item_model import PlaylistItemModel
 from PyRetroPlayer.playlist.song import Song
-from PyRetroPlayer.playlist.song_info_dialog import SongInfoDialog
 from PyRetroPlayer.playlist.song_library import SongLibrary
 from PyRetroPlayer.settings.settings import Settings
 
@@ -360,12 +359,6 @@ class PlaylistTreeView(QTreeView):
             logger.warning(
                 f"Song ID {entry.song_id} not found in library; cannot remove."
             )
-
-    def on_song_info_dialog(self) -> None:
-        current_song = self.get_current_song()
-        if current_song:
-            dialog = SongInfoDialog(current_song, self)
-            dialog.exec()
 
     def select_current_song(self, index: int) -> None:
         if 0 <= index < self.source_model.rowCount():

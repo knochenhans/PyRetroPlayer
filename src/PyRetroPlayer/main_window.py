@@ -249,6 +249,12 @@ class MainWindow(QMainWindow):
             ]
             self.load_files(downloaded_files, playlist)
 
+    def on_song_info_dialog(self) -> None:
+        current_song = self.get_current_song()
+        if current_song:
+            dialog = SongInfoDialog(current_song, self.ui_manager.font_manager, self)
+            dialog.exec()
+
 
 if __name__ == "__main__":
     app: QApplication = QApplication(sys.argv)
