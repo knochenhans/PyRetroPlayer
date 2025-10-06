@@ -49,7 +49,7 @@ class ActionsManager:
             "dialog-information",
             "Song Information",
             "Show information about the current song",
-            lambda main_window: main_window.playlist_ui_manager.show_song_info_dialog,
+            lambda main_window: main_window.on_song_info_dialog,
         ),
         (
             "get_random_module",
@@ -79,6 +79,13 @@ class ActionsManager:
             "Download favorite modules of the current member",
             lambda main_window: main_window.download_favorite_modules,
         ),
+        (
+            "rescan_songs",
+            "view-refresh",
+            "Rescan Songs",
+            "Rescan the current songs and update metadata",
+            lambda main_window: main_window.rescan_selected_songs,
+        )
     ]
 
     @staticmethod

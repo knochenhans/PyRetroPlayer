@@ -7,7 +7,6 @@ from loguru import logger
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QFileDialog
 
-from PyRetroPlayer.actions_manager import ActionsManager
 from PyRetroPlayer.main_window import MainWindow
 from PyRetroPlayer.playlist.column_manager import ColumnManager
 from PyRetroPlayer.playlist.playlist import Playlist
@@ -15,6 +14,7 @@ from PyRetroPlayer.playlist.playlist_manager import PlaylistManager
 from PyRetroPlayer.playlist.playlist_tab_widget import PlaylistTabWidget
 from PyRetroPlayer.playlist.playlist_tree_view import PlaylistTreeView
 from PyRetroPlayer.settings.settings import Settings
+from PyRetroPlayer.UI.actions_manager import ActionsManager
 
 
 class PlaylistUIManager:
@@ -179,7 +179,12 @@ class PlaylistUIManager:
     def setup_actions(self) -> None:
         actions: List[QAction] = ActionsManager.get_actions_by_names(
             self.main_window,
-            ["song_info_dialog", "lookup_msm", "lookup_modarchive", "download_favorites"],
+            [
+                "song_info_dialog",
+                "lookup_msm",
+                "lookup_modarchive",
+                "download_favorites",
+            ],
         )
         for i in range(self.tab_widget.count()):
             widget = self.tab_widget.widget(i)

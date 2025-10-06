@@ -24,6 +24,7 @@ from PyRetroPlayer.player_backends.libuade.player_backend_libuade import (
 )
 from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.song import Song
+from PyRetroPlayer.playlist.song_info_dialog import SongInfoDialog
 from PyRetroPlayer.playlist.song_library import SongLibrary
 from PyRetroPlayer.settings.settings import Settings
 from PyRetroPlayer.web_helper import WebHelper
@@ -74,8 +75,8 @@ class MainWindow(QMainWindow):
 
         from PyRetroPlayer.file_manager import FileManager
         from PyRetroPlayer.player_control_manager import PlayerControlManager
-        from PyRetroPlayer.playlist_ui_manager import PlaylistUIManager
-        from PyRetroPlayer.ui_manager import UIManager
+        from PyRetroPlayer.UI.playlist_ui_manager import PlaylistUIManager
+        from PyRetroPlayer.UI.ui_manager import UIManager
 
         self.ui_manager = UIManager(self)
         self.playlist_ui_manager = PlaylistUIManager(self)
@@ -90,7 +91,7 @@ class MainWindow(QMainWindow):
 
         self.web_helper = WebHelper()
 
-        from PyRetroPlayer.actions_manager import ActionsManager
+        from PyRetroPlayer.UI.actions_manager import ActionsManager
 
         self.actions_: List[QAction] = ActionsManager.get_actions_by_names(
             self,
@@ -120,7 +121,10 @@ class MainWindow(QMainWindow):
         self.ui_manager.setup_icon_bar()
 
         self.load_settings()
-        self.ui_manager.setup_tray()
+
+        from PyRetroPlayer.UI.tray_manager import TrayManager
+
+        self.tray_manager = TrayManager(self)
 
     def load_settings(self) -> None:
         geometry = self.settings.get("window_geometry")

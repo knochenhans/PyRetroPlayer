@@ -13,20 +13,17 @@ from PySide6.QtGui import (
     QDropEvent,
     QIcon,
     QKeyEvent,
-    QPainter,
     QStandardItem,
 )
 from PySide6.QtWidgets import (
     QAbstractItemView,
-    QProxyStyle,
-    QStyle,
-    QStyleOption,
     QTreeView,
     QWidget,
 )
 
 from PyRetroPlayer.playlist.column_filter_proxy import ColumnFilterProxy
 from PyRetroPlayer.playlist.column_manager import ColumnManager
+from PyRetroPlayer.playlist.custom_item_view_style import CustomItemViewStyle
 from PyRetroPlayer.playlist.drag_drop_reorder_proxy import (
     DragDropReorderProxy,
 )
@@ -37,35 +34,6 @@ from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.playlist.song_info_dialog import SongInfoDialog
 from PyRetroPlayer.playlist.song_library import SongLibrary
 from PyRetroPlayer.settings.settings import Settings
-
-
-class CustomItemViewStyle(QProxyStyle):
-    def __init__(self, style: Optional[QStyle] = None):
-        super().__init__(style)
-
-    def drawPrimitive(
-        self,
-        element: QStyle.PrimitiveElement,
-        option: QStyleOption,
-        painter: QPainter,
-        widget: Optional[QWidget] = None,
-    ):
-        if (
-            element == QStyle.PrimitiveElement.PE_IndicatorItemViewItemDrop
-            and not option.rect.isNull()
-        ):
-            opt = QStyleOption(option)
-            opt.rect.setLeft(0)
-            if widget:
-                opt.rect.setRight(widget.width())
-
-            pen = painter.pen()
-            pen.setWidth(3)
-            painter.setPen(pen)
-
-            super().drawPrimitive(element, opt, painter, widget)
-            return
-        super().drawPrimitive(element, option, painter, widget)
 
 
 class PlaylistTreeView(QTreeView):
