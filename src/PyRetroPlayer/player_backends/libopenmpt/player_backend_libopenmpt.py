@@ -1,5 +1,4 @@
 import ctypes
-import sys
 import warnings
 from typing import List, Optional, Tuple
 
@@ -193,48 +192,47 @@ class PlayerBackendLibOpenMPT(PlayerBackend):
         if not self.song:
             return
 
-        keys: List[str] = (  # type: ignore
-            libopenmpt.openmpt_module_get_metadata_keys(self.mod)  # type: ignore
+        keys: List[str] = (
+            libopenmpt.openmpt_module_get_metadata_keys(self.mod)
             .decode("iso-8859-1", "cp1252")
             .split(";")
         )
-        for key in keys:  # type: ignore
-            if isinstance(key, bytes):
-                key = key.decode("iso-8859-1", "cp1252")
-                key_c_char_p = ctypes.c_char_p(key.encode("iso-8859-1", "cp1252"))
-                value = libopenmpt.openmpt_module_get_metadata(  # type: ignore
-                    self.mod, key_c_char_p
-                ).decode("iso-8859-1", "cp1252")
-                if value != "":
-                    match key:
-                        case "type":
-                            self.song.custom_metadata["type"] = value
-                        case "type_long":
-                            self.song.custom_metadata["type_long"] = value
-                        case "originaltype":
-                            self.song.custom_metadata["originaltype"] = value
-                        case "originaltype_long":
-                            self.song.custom_metadata["originaltype_long"] = value
-                        case "container":
-                            self.song.custom_metadata["container"] = value
-                        case "container_long":
-                            self.song.custom_metadata["container_long"] = value
-                        case "tracker":
-                            self.song.custom_metadata["tracker"] = value
-                        case "artist":
-                            self.song.artist = value
-                        case "title":
-                            self.song.title = value
-                        case "date":
-                            self.song.custom_metadata["date"] = value
-                        case "message":
-                            self.song.custom_metadata["message"] = value
-                        case "message_raw":
-                            self.song.custom_metadata["message_raw"] = value
-                        case "warnings":
-                            self.song.custom_metadata["warnings"] = value
-                        case _:
-                            pass
+        for key in keys:
+            # key = key.decode("iso-8859-1", "cp1252")
+            key_c_char_p = ctypes.c_char_p(key.encode("iso-8859-1", "cp1252"))
+            value = libopenmpt.openmpt_module_get_metadata(  # type: ignore
+                self.mod, key_c_char_p
+            ).decode("iso-8859-1", "cp1252")
+            if value != "":
+                match key:
+                    case "type":
+                        self.song.custom_metadata["type"] = value
+                    case "type_long":
+                        self.song.custom_metadata["type_long"] = value
+                    case "originaltype":
+                        self.song.custom_metadata["originaltype"] = value
+                    case "originaltype_long":
+                        self.song.custom_metadata["originaltype_long"] = value
+                    case "container":
+                        self.song.custom_metadata["container"] = value
+                    case "container_long":
+                        self.song.custom_metadata["container_long"] = value
+                    case "tracker":
+                        self.song.custom_metadata["tracker"] = value
+                    case "artist":
+                        self.song.artist = value
+                    case "title":
+                        self.song.title = value
+                    case "date":
+                        self.song.custom_metadata["date"] = value
+                    case "message":
+                        self.song.custom_metadata["message"] = value
+                    case "message_raw":
+                        self.song.custom_metadata["message_raw"] = value
+                    case "warnings":
+                        self.song.custom_metadata["warnings"] = value
+                    case _:
+                        pass
 
         self.song.subsongs = libopenmpt.openmpt_module_get_num_subsongs(self.mod)  # type: ignore
         self.song.duration = int(self.get_module_length())
