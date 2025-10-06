@@ -73,9 +73,7 @@ class SongLibrary:
                             song.title,
                             song.artist,
                             song.duration,
-                            json.dumps(
-                                song.available_backends
-                            ),  # Serialize as JSON list
+                            json.dumps(song.available_backends),
                             song.md5,
                             song.sha1,
                             json.dumps(song.custom_metadata),
@@ -228,6 +226,29 @@ class SongLibrary:
                 if not os.path.exists(file_path):
                     logger.warning(f"Removing missing file: {file_path}")
                     self.remove_song(song_id)
+
+    def update_song(self, song: Song) -> None:
+        with self.conn as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                UPDATE songs
+                SET file_path = ?, title = ?, artist = ?, duration = ?, available_backends = ?, md5 = ?, sha1 = ?, custom_metadata = ?
+                WHERE id = ?
+                """,
+                (
+                    song.file_path,
+                    song.title,
+                    song.artist,
+                    song.duration,
+                    json.dumps(song.available_backends),
+                    song.md5,
+                    song.sha1,
+                    json.dumps(song.custom_metadata),
+                    song.id,
+                ),
+            )
+            logger.info(f"Updated song in library: {song.title} (ID: {song.id})")
 
     def clear(self) -> None:
         with self.conn as conn:

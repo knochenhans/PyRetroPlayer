@@ -106,6 +106,7 @@ class MainWindow(QMainWindow):
                 "lookup_modarchive",
                 "lookup_msm",
                 "download_favorites",
+                "rescan_songs",
             ],
         )
 
@@ -193,12 +194,15 @@ class MainWindow(QMainWindow):
     def on_all_songs_loaded(self) -> None:
         self.file_manager.on_all_songs_loaded()
 
-    def on_lookup_modarchive(self) -> None:
+    def get_current_song(self) -> Optional[Song]:
         current_tree_view = self.playlist_ui_manager.get_current_tree_view()
         if current_tree_view is None:
-            return
+            return None
 
-        current_song = current_tree_view.get_current_song()
+        return current_tree_view.get_current_song()
+
+    def on_lookup_modarchive(self) -> None:
+        current_song = self.get_current_song()
 
         if current_song is None:
             return
@@ -209,12 +213,7 @@ class MainWindow(QMainWindow):
             webbrowser.open(url)
 
     def on_lookup_msm(self) -> None:
-        current_tree_view = self.playlist_ui_manager.get_current_tree_view()
-        if current_tree_view is None:
-            return
-
-        current_song = current_tree_view.get_current_song()
-
+        current_song = self.get_current_song()
         if current_song is None:
             return
 
@@ -254,6 +253,24 @@ class MainWindow(QMainWindow):
         if current_song:
             dialog = SongInfoDialog(current_song, self.ui_manager.font_manager, self)
             dialog.exec()
+
+    def rescan_selected_songs(self) -> None:
+        current_tree_view = self.playlist_ui_manager.get_current_tree_view()
+        if current_tree_view is None:
+            return None
+
+        selected_entries = current_tree_view.get_selected_entries()
+        if not selected_entries:
+            return
+
+        for entry in selected_entries:
+            song = self.song_library.get_song(entry.song_id)
+            if song is None:
+                continue
+
+            self.file_manager.rescan_song(song)
+            self.song_library.update_song(song)
+            current_tree_view.update_entry(entry)
 
 
 if __name__ == "__main__":

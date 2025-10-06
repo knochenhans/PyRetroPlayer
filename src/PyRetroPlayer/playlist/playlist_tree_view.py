@@ -218,8 +218,31 @@ class PlaylistTreeView(QTreeView):
         song_id = self.playlist.get_song_ids()[row]
         self.playlist.remove_song(song_id)
 
+    def update_entry(self, entry: PlaylistEntry) -> None:
+        try:
+            row = self.playlist.get_song_ids().index(entry.song_id)
+            row_data = self.build_row_data(entry)
+            for col_idx, column_def in enumerate(self.default_columns_definitions):
+                col_id = column_def.get("id", "")
+                item = self.source_model.item(row, col_idx)
+                if item and col_id in row_data:
+                    item.setText(row_data[col_id])
+            logger.info(f"Updated playlist entry at row {row}")
+        except ValueError:
+            logger.warning(
+                f"Song ID {entry.song_id} not found in playlist; cannot update row."
+            )
+
     def get_selected_rows(self) -> List[int]:
         return sorted(set(index.row() for index in self.selectedIndexes()))
+
+    def get_selected_entries(self) -> List[PlaylistEntry]:
+        selected_rows = self.get_selected_rows()
+        entries: List[PlaylistEntry] = []
+        for row in selected_rows:
+            if 0 <= row < len(self.playlist.entries):
+                entries.append(self.playlist.entries[row])
+        return entries
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasUrls():
