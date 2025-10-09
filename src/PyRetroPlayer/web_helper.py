@@ -22,9 +22,6 @@ class WebHelper:
         adapter = HTTPAdapter(max_retries=retries)
         self.session.mount("https://", adapter)
 
-    def get_msm_url(self, song: Song) -> str:
-        return f"https://modsamplemaster.thegang.nu/module.php?sha1={song.sha1}"
-
     def download_module_file(self, module_id: int, temp_dir: str) -> Optional[str]:
         filename: Optional[str] = None
         url: str = f"https://api.modarchive.org/downloads.php?moduleid={module_id}"
@@ -144,46 +141,6 @@ class WebHelper:
         else:
             logger.error("No pagination found")
         return None
-
-    def lookup_modarchive_mod_url(self, song: Song) -> str:
-        logger.info(f"Looking up ModArchive URL for song: {song.file_path}")
-
-        def search_modarchive(query: str, search_type: str) -> Optional[str]:
-            url = f"https://modarchive.org/index.php?request=search&query={query}&submit=Find&search_type={search_type}"
-            response = self.session.get(url)
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, "html.parser")
-                # Check if there are search results
-                search_results_header = soup.find(
-                    "h1", class_="site-wide-page-head-title", string="Search Results"
-                )
-                if search_results_header:
-                    result = soup.find("a", class_="standard-link", href=True)
-                    if result and isinstance(result, Tag):
-                        href = result["href"]
-                        if isinstance(href, list):
-                            href = href[0]
-                        return "https://modarchive.org/" + href
-            return None
-
-        filename = song.file_path.split("/")[-1]
-        url = search_modarchive(filename, "filename")
-        if not url:
-            if song.title and song.title != "<no songtitle>":
-                title_with_plus = song.title.replace(" ", "+")
-                url = search_modarchive(title_with_plus, "filename_or_songtitle")
-        return url if url else ""
-
-    def lookup_msm_mod_url(self, song: Song) -> str:
-        url: Optional[str] = None
-        if song:
-            url = self.get_msm_url(song)
-        if url:
-            # Check if the link returns a 404
-            response = self.session.get(url)
-            if response.status_code == 200:
-                return url
-        return ""
 
     def check_favorite(self, member_id: int, song: Song) -> bool:
         # Check if the module is the current members favorite

@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QSlider,
     QToolBar,
 )
+from loguru import logger
 
 from PyRetroPlayer.audio_backends.pyaudio.audio_backend_pyuadio import (
     AudioBackendPyAudio,
@@ -26,6 +27,8 @@ from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.playlist.song_info_dialog import SongInfoDialog
 from PyRetroPlayer.playlist.song_library import SongLibrary
+from PyRetroPlayer.scraping.modarchive_scraper import ModArchiveScraper
+from PyRetroPlayer.scraping.msm_scraper import MSMScraper
 from PyRetroPlayer.settings.settings import Settings
 from PyRetroPlayer.web_helper import WebHelper
 
@@ -127,6 +130,9 @@ class MainWindow(QMainWindow):
 
         self.tray_manager = TrayManager(self)
 
+        self.modarchive_scraper = ModArchiveScraper()
+        self.msm_scraper = MSMScraper()
+
     def load_settings(self) -> None:
         geometry = self.settings.get("window_geometry")
         if geometry:
@@ -207,7 +213,7 @@ class MainWindow(QMainWindow):
         if current_song is None:
             return
 
-        url = self.web_helper.lookup_modarchive_mod_url(current_song)
+        url = self.modarchive_scraper.get_url(current_song)
 
         if url:
             webbrowser.open(url)
@@ -217,7 +223,7 @@ class MainWindow(QMainWindow):
         if current_song is None:
             return
 
-        url = self.web_helper.lookup_msm_mod_url(current_song)
+        url = self.msm_scraper.get_url(current_song)
 
         if url:
             webbrowser.open(url)
@@ -269,8 +275,13 @@ class MainWindow(QMainWindow):
                 continue
 
             self.file_manager.rescan_song(song)
+            self.modarchive_scraper.scrape(song)
+            self.modarchive_scraper.apply_scraped_data_to_song(song)
+
             self.song_library.update_song(song)
             current_tree_view.update_entry(entry)
+
+        logger.info("All selected songs have been rescanned.")
 
 
 if __name__ == "__main__":
