@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QFont, QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QDialog,
@@ -62,6 +62,9 @@ class SongInfoDialog(QDialog):
         self.populate_model()
         self.list_view.resizeColumnToContents(0)
 
+        # Install event filter for tooltip
+        self.list_view.viewport().installEventFilter(self)
+
     def populate_model(self):
         fields = {
             "Title": self.song.title,
@@ -91,7 +94,7 @@ class SongInfoDialog(QDialog):
         ):
             display_key = f"{prefix}{key.capitalize()}" if prefix else key.capitalize()
             if key.lower() == "message":
-                self.message_text.setText(str(value))
+                self.message_text.setText(value if isinstance(value, str) else "")
                 return
             if isinstance(value, dict):
                 for subkey, subval in value.items():
@@ -108,3 +111,25 @@ class SongInfoDialog(QDialog):
         if self.song.custom_metadata:
             for key, value in self.song.custom_metadata.items():
                 add_metadata_rows(key, value)
+
+    def eventFilter(self, obj: QObject, event: QEvent):
+        if obj == self.list_view.viewport() and event.type() == QEvent.Type.ToolTip:
+            index = self.list_view.indexAt(event.pos())
+            if index.isValid():
+                value_index = index.siblingAtColumn(1)
+                value = value_index.data()
+                if value:
+                    # Show tooltip with value content
+                    from PySide6.QtWidgets import QToolTip
+
+                    QToolTip.showText(
+                        event.globalPos(), str(value), self.list_view
+                    )
+                    return True
+            # Hide tooltip if not valid
+            from PySide6.QtWidgets import QToolTip
+
+            QToolTip.hideText()
+            event.ignore()
+            return True
+        return super().eventFilter(obj, event)
