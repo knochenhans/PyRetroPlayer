@@ -198,7 +198,8 @@ class PlayerBackendLibUADE(PlayerBackend):
             libuade.uade_cleanup_notification(n)
 
         if nbytes < 0:
-            raise RuntimeError("Playback error")
+            logger.error("Playback error")
+            nbytes = 0
 
         if nbytes == 0:
             logger.info("Song end")
