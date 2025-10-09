@@ -72,16 +72,9 @@ class PlayerControlManager:
                 song = self.main_window.song_library.get_song(
                     next_entry.song_id if next_entry else ""
                 )
+
                 if song:
-                    song_title = song.title
-                    if song_title == "":
-                        song_title = f"{song.file_path.split('/')[-1]}"
-                    if song.artist:
-                        song_title += f" - {song.artist}"
-                    self.main_window.tray_manager.show_tray_notification(
-                        "Now Playing", song_title
-                    )
-                    self.main_window.ui_manager.update_window_title(song_title)
+                    self.on_current_song_changed(song)
                     self.play_song(song)
 
                 if next_entry:
@@ -121,6 +114,24 @@ class PlayerControlManager:
                     self.pause_callback()
             case _:
                 pass
+
+    def on_current_song_changed(self, song: Song) -> None:
+        song_title = song.title
+        if song_title == "":
+            song_title = f"{song.file_path.split('/')[-1]}"
+        if song.artist:
+            song_title += f" - {song.artist}"
+        self.main_window.tray_manager.show_tray_notification(
+            "Now Playing", song_title
+        )
+        self.main_window.ui_manager.update_window_title(song_title)
+
+        comments = song.custom_metadata.get("comments", [])
+
+        for comment in comments:
+            self.main_window.tray_manager.show_tray_notification(
+                "Comment", comment
+            )
 
     def play_song(self, song: Song) -> None:
         backend_name = song.available_backends[0]
