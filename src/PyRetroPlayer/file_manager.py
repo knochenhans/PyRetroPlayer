@@ -213,19 +213,13 @@ class FileManager:
         if not song or not song.file_path:
             return None
 
-        backend_name = song.available_backends[0] if song.available_backends else None
-
-        if backend_name is None:
-            return None
-        
-        backend = self.main_window.player_backends.get(backend_name)
-
-        if backend is None:
-            return None
-        
-        backend_instance = backend()
-        backend_instance.song = song
-        if backend_instance.check_module():
-            backend_instance.retrieve_song_info()
-            return backend_instance.song
+        for backend_name in song.available_backends:
+            backend = self.main_window.player_backends.get(backend_name)
+            if backend is None:
+                continue
+            backend_instance = backend()
+            backend_instance.song = song
+            if backend_instance.check_module():
+                backend_instance.retrieve_song_info()
+                return backend_instance.song
         return None
