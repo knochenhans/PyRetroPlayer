@@ -173,7 +173,7 @@ class PlaylistUIManager:
 
     def show_song_info_dialog(self) -> None:
         tree_view = self.get_current_tree_view()
-        if tree_view:
+        if isinstance(tree_view, PlaylistTreeView):
             tree_view.on_song_info_dialog()
 
     def setup_actions(self) -> None:

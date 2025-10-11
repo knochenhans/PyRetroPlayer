@@ -7,19 +7,24 @@ from PySide6.QtWidgets import (
     QMenu,
     QMenuBar,
     QProgressBar,
+    QSlider,
+    QToolBar,
     QVBoxLayout,
     QWidget,
 )
 
-from PyRetroPlayer.UI.font_manager import FontManager
 from PyRetroPlayer.main_window import MainWindow
+from PyRetroPlayer.UI.font_manager import FontManager
 
 
 class UIManager:
     def __init__(self, main_window: MainWindow) -> None:
         self.main_window = main_window
-        self.progress_bar: QProgressBar
-        self.time_label: QLabel  # Add time label attribute
+        self.icon_bar: QToolBar
+        self.loading_progress_bar: QProgressBar
+        self.song_progress_slider: QSlider
+        self.volume_slider: QSlider
+        self.time_label: QLabel
 
         self.setup_central_widget()
 
@@ -33,12 +38,16 @@ class UIManager:
         self.content_layout: QVBoxLayout = QVBoxLayout()
         self.layout.addLayout(self.content_layout)
 
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setMinimum(0)
-        self.progress_bar.setMaximum(100)
-        self.progress_bar.setValue(0)
-        self.layout.addWidget(self.progress_bar)
-        self.progress_bar.setVisible(False)
+        self.song_progress_slider = QSlider(Qt.Orientation.Horizontal)
+        self.volume_slider = QSlider(Qt.Orientation.Horizontal)
+
+        self.loading_progress_bar = QProgressBar()
+        self.loading_progress_bar.setMinimum(0)
+        self.loading_progress_bar.setMaximum(100)
+        self.loading_progress_bar.setValue(0)
+        self.loading_progress_bar.setVisible(False)
+
+        self.layout.addWidget(self.loading_progress_bar)
 
     def add_widget(self, widget: QWidget) -> None:
         self.content_layout.addWidget(widget)
@@ -110,51 +119,59 @@ class UIManager:
             library_menu, "&Clear Song Library", self.main_window.clear_song_library
         )
 
-    def update_progress_bar(self, current_position: int, module_length: int) -> None:
-        if module_length > 0:
-            self.main_window.progress_slider.setMaximum(module_length)
-            self.main_window.progress_slider.setValue(current_position)
-            # self.progress_bar.update()
+    def update_song_progress_bar(self, current_position: int, song_length: int) -> None:
+        if song_length > 0:
+            self.song_progress_slider.setMaximum(song_length)
+            self.song_progress_slider.setValue(current_position)
 
-            self.update_time_label(current_position, module_length)
+            self.update_time_label(current_position, song_length)
+
+    def update_loading_progress_bar(self, current_value: int, total_value: int) -> None:
+        if not self.loading_progress_bar.isVisible():
+            self.loading_progress_bar.setVisible(True)
+
+        self.loading_progress_bar.setValue(current_value)
+        self.loading_progress_bar.setMaximum(total_value)
+        
+        if current_value >= total_value:
+            self.loading_progress_bar.setVisible(False)
 
     def setup_icon_bar(self) -> None:
+        self.icon_bar = QToolBar("Main Toolbar", self.main_window)
+        self.main_window.addToolBar(self.icon_bar)
+
         for action in self.main_window.actions_:
-            self.main_window.icon_bar.addAction(action)
+            self.icon_bar.addAction(action)
 
-        self.main_window.icon_bar.addSeparator()
+        self.icon_bar.addSeparator()
 
-        # Add progress slider
-        # self.main_window.progress_slider = QSlider(Qt.Orientation.Horizontal)
-        self.main_window.progress_slider.setRange(0, 100)
-        self.main_window.progress_slider.setValue(0)
-        self.main_window.progress_slider.setToolTip("Playback Progress")
-        # progress_slider.valueChanged.connect(self.on_progress_changed)
-        self.main_window.icon_bar.addWidget(self.main_window.progress_slider)
+        self.song_progress_slider.setRange(0, 100)
+        self.song_progress_slider.setValue(0)
+        self.song_progress_slider.setToolTip("Playback Progress")
+        self.icon_bar.addWidget(self.song_progress_slider)
 
         # Add time label for 00:00/00:00 display
         self.time_label = QLabel("00:00/00:00")
         self.time_label.setMinimumWidth(80)
         self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.main_window.icon_bar.addWidget(self.time_label)
+        self.icon_bar.addWidget(self.time_label)
 
-        self.main_window.progress_slider.sliderMoved.connect(
+        self.song_progress_slider.sliderMoved.connect(
             self.main_window.player_control_manager.on_seek
         )
 
-        self.main_window.icon_bar.addSeparator()
+        self.icon_bar.addSeparator()
 
         # Add volume slider
-        # self.main_window.volume_slider = QSlider(Qt.Orientation.Horizontal)
-        self.main_window.volume_slider.setRange(0, 100)
-        self.main_window.volume_slider.setValue(50)
-        self.main_window.volume_slider.setToolTip("Volume")
-        self.main_window.volume_slider.setMaximumWidth(100)
+        self.volume_slider.setRange(0, 100)
+        self.volume_slider.setValue(50)
+        self.volume_slider.setToolTip("Volume")
+        self.volume_slider.setMaximumWidth(100)
 
-        self.main_window.volume_slider.sliderMoved.connect(
+        self.volume_slider.sliderMoved.connect(
             self.main_window.player_control_manager.on_volume_changed
         )
-        self.main_window.icon_bar.addWidget(self.main_window.volume_slider)
+        self.icon_bar.addWidget(self.volume_slider)
 
     def update_time_label(self, current_ms: int, total_ms: int) -> None:
         def format_time(ms: int) -> str:

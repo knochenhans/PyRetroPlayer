@@ -4,15 +4,13 @@ import webbrowser
 from typing import Any, Dict, List, Optional
 
 from appdirs import user_config_dir, user_data_dir
-from PySide6.QtCore import Qt, Signal
+from loguru import logger
+from PySide6.QtCore import QThread
 from PySide6.QtGui import QAction, QCloseEvent, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
-    QSlider,
-    QToolBar,
 )
-from loguru import logger
 
 from PyRetroPlayer.audio_backends.pyaudio.audio_backend_pyuadio import (
     AudioBackendPyAudio,
@@ -24,6 +22,7 @@ from PyRetroPlayer.player_backends.libuade.player_backend_libuade import (
     PlayerBackendLibUADE,
 )
 from PyRetroPlayer.playlist.playlist import Playlist
+from PyRetroPlayer.playlist.playlist_entry import PlaylistEntry
 from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.playlist.song_info_dialog import SongInfoDialog
 from PyRetroPlayer.playlist.song_library import SongLibrary
@@ -34,8 +33,6 @@ from PyRetroPlayer.web_helper import WebHelper
 
 
 class MainWindow(QMainWindow):
-    progress_bar_value_changed = Signal(int)
-
     def __init__(self) -> None:
         super().__init__()
 
@@ -116,12 +113,6 @@ class MainWindow(QMainWindow):
         self.playlist_ui_manager.setup_actions()
 
         self.ui_manager.create_menu_bar()
-
-        self.icon_bar = QToolBar("Main Toolbar", self)
-        self.addToolBar(self.icon_bar)
-
-        self.progress_slider = QSlider(Qt.Orientation.Horizontal)
-        self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.ui_manager.setup_icon_bar()
 
         self.load_settings()
@@ -160,8 +151,6 @@ class MainWindow(QMainWindow):
         self.playlist_ui_manager.tab_widget.update_tab_column_widths()
 
         self.save_column_managers()
-
-        # current_volume = volume_slider.value()
 
         self.settings.save()
 

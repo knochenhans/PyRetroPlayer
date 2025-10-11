@@ -53,15 +53,11 @@ class FileManager:
         file_fetcher = FileFetcher()
         file_list = file_fetcher.get_files_recursively_from_path_list(file_paths)
 
-        progress_bar = self.main_window.ui_manager.progress_bar
-
         self.total_files = len(file_list)
         self.files_remaining = self.total_files
 
         if self.total_files > 1:
-            progress_bar.show()
-            progress_bar.setMaximum(self.total_files)
-            self.main_window.progress_bar_value_changed.connect(progress_bar.setValue)
+            self.main_window.ui_manager.update_loading_progress_bar(0, self.total_files)
 
         loader_instance = self.loaders[0](
             player_backends=self.main_window.player_backends,
@@ -86,20 +82,19 @@ class FileManager:
             playlist.add_song(id)
 
         self.files_remaining -= 1
-        self.main_window.progress_bar_value_changed.emit(
-            self.total_files - self.files_remaining
+        self.main_window.ui_manager.update_loading_progress_bar(
+            self.total_files - self.files_remaining, self.total_files
         )
         logger.info(f"Loaded song: {song.title} by {song.artist}")
 
     def on_all_songs_loaded(self) -> None:
-        self.main_window.progress_bar_value_changed.emit(self.total_files)
-        self.main_window.ui_manager.progress_bar.hide()
+        self.main_window.ui_manager.update_loading_progress_bar(
+            self.total_files, self.total_files
+        )
         logger.info("All songs have been loaded.")
         if self.file_loader:
             self.file_loader.cleanup()
             self.file_loader = None
-
-        # self.main_window.update_playlist_view()
 
     def load_all_songs_from_library(self) -> None:
         songs = self.main_window.song_library.get_all_songs()
@@ -108,7 +103,6 @@ class FileManager:
             id = song.id
             if playlist:
                 playlist.add_song(id)
-        # self.main_window.update_playlist_view()
 
     def add_files(self) -> None:
         file_paths, _ = QFileDialog.getOpenFileNames(

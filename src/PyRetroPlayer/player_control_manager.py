@@ -121,16 +121,14 @@ class PlayerControlManager:
             song_title = f"{song.file_path.split('/')[-1]}"
         if song.artist:
             song_title += f" - {song.artist}"
-        self.main_window.tray_manager.show_tray_notification(
-            "Now Playing", song_title
-        )
+        self.main_window.tray_manager.show_tray_notification("Now Playing", song_title)
         self.main_window.ui_manager.update_window_title(song_title)
 
         comments = song.custom_metadata.get("comments", [])
 
         for comment in comments:
             self.main_window.tray_manager.show_tray_notification(
-                "Comment", comment
+                "Comment", comment.get("meta", "") + "\n\n" + comment.get("content", "")
             )
 
     def play_song(self, song: Song) -> None:
@@ -177,7 +175,9 @@ class PlayerControlManager:
                 self.current_backend.set_volume(value)
 
     def on_position_changed(self, current_position: int, module_length: int) -> None:
-        self.main_window.ui_manager.update_progress_bar(current_position, module_length)
+        self.main_window.ui_manager.update_song_progress_bar(
+            current_position, module_length
+        )
 
     def on_song_finished(self) -> None:
         self.set_player_state(self.PlayerState.STOPPED)
