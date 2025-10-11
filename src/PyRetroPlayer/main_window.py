@@ -269,19 +269,34 @@ class MainWindow(QMainWindow):
         if not selected_entries:
             return
 
-        for entry in selected_entries:
-            song = self.song_library.get_song(entry.song_id)
-            if song is None:
-                continue
+        from PyRetroPlayer.rescan_entries_worker import RescanEntriesWorker
 
-            self.file_manager.rescan_song(song)
-            self.modarchive_scraper.scrape(song)
-            self.modarchive_scraper.apply_scraped_data_to_song(song)
+        self.rescan_thread = QThread(self)
+        self.rescan_worker = RescanEntriesWorker(
+            selected_entries,
+            self.song_library,
+            self.file_manager,
+            self.modarchive_scraper,
+        )
+        self.rescan_worker.moveToThread(self.rescan_thread)
+        self.rescan_thread.started.connect(self.rescan_worker.run)
+        self.rescan_worker.finished.connect(self.rescan_thread.quit)
+        self.rescan_worker.finished.connect(self.rescan_worker.deleteLater)
+        self.rescan_thread.finished.connect(self.rescan_thread.deleteLater)
+        self.rescan_worker.entry_updated.connect(self.playlist_entry_updated)
+        self.rescan_thread.start()
 
-            self.song_library.update_song(song)
-            current_tree_view.update_entry(entry)
+        logger.info("Started rescanning selected songs asynchronously.")
 
-        logger.info("All selected songs have been rescanned.")
+    def playlist_entry_updated(
+        self, entry: PlaylistEntry, current: int, total: int
+    ) -> None:
+        current_tree_view = self.playlist_ui_manager.get_current_tree_view()
+        if current_tree_view is None:
+            return
+
+        current_tree_view.update_entry(entry)
+        self.ui_manager.update_loading_progress_bar(current, total)
 
 
 if __name__ == "__main__":
