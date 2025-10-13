@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QTreeView,
     QWidget,
 )
+from SettingsManager import SettingsManager
 
 from PyRetroPlayer.playlist.column_filter_proxy import ColumnFilterProxy
 from PyRetroPlayer.playlist.column_manager import ColumnManager
@@ -32,7 +33,6 @@ from PyRetroPlayer.playlist.playlist_entry import PlaylistEntry
 from PyRetroPlayer.playlist.playlist_item_model import PlaylistItemModel
 from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.playlist.song_library import SongLibrary
-from PyRetroPlayer.settings.settings import Settings
 
 
 class PlaylistTreeView(QTreeView):
@@ -47,7 +47,7 @@ class PlaylistTreeView(QTreeView):
 
     def __init__(
         self,
-        settings: Settings,
+        settings_manager: SettingsManager,
         playlist: Playlist,
         column_manager: ColumnManager,
         default_columns_definitions: List[Dict[str, Any]],
@@ -56,7 +56,7 @@ class PlaylistTreeView(QTreeView):
     ):
         super().__init__(parent)
 
-        self.settings = settings
+        self.settings_manager = settings_manager
         self.playlist = playlist
         self.column_manager = column_manager
         self.default_columns_definitions = default_columns_definitions

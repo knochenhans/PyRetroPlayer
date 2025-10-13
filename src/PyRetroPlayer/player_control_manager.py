@@ -2,13 +2,13 @@ from enum import Enum, auto
 from typing import Callable, Optional
 
 from loguru import logger
+from SettingsManager import SettingsManager
 
 from PyRetroPlayer.main_window import MainWindow
 from PyRetroPlayer.player_thread_manager import PlayerThreadManager
 from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.queue_manager import QueueManager
-from PyRetroPlayer.settings.settings import Settings
 
 
 class PlayerControlManager:
@@ -20,7 +20,7 @@ class PlayerControlManager:
     def __init__(
         self,
         main_window: "MainWindow",
-        settings: Settings,
+        settings_manager: SettingsManager,
         play_callback: Optional[Callable[[], None]] = None,
         pause_callback: Optional[Callable[[], None]] = None,
         stop_callback: Optional[Callable[[], None]] = None,
@@ -33,7 +33,7 @@ class PlayerControlManager:
         self.state = self.PlayerState.STOPPED
         self.player_thread_manager = PlayerThreadManager(
             audio_backend=self.main_window.audio_backend,
-            settings=settings,
+            settings_manager=settings_manager,
             on_position_changed=self.on_position_changed,
             on_song_finished=self.on_song_finished,
         )

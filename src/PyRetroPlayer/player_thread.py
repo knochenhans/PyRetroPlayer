@@ -3,10 +3,10 @@ import time
 from typing import Callable, Optional
 
 from loguru import logger
+from SettingsManager import SettingsManager
 
 from PyRetroPlayer.audio_backends.audio_backend import AudioBackend
 from PyRetroPlayer.player_backends.player_backend import PlayerBackend
-from PyRetroPlayer.settings.settings import Settings
 
 
 class PlayerThread(threading.Thread):
@@ -14,7 +14,7 @@ class PlayerThread(threading.Thread):
         self,
         player_backend: PlayerBackend,
         audio_backend: AudioBackend,
-        settings: Settings,
+        settings_manager: SettingsManager,
         on_position_changed: Optional[Callable[[int, int], None]] = None,
         on_song_finished: Optional[Callable[[], None]] = None,
     ) -> None:
@@ -23,13 +23,13 @@ class PlayerThread(threading.Thread):
         self.audio_backend = audio_backend
         self.on_position_changed = on_position_changed
         self.on_song_finished = on_song_finished
-        self.settings = settings
+        self.settings_manager = settings_manager
 
         self.stop_flag = threading.Event()
         self.pause_flag = threading.Event()
 
         self.max_silence_length_ms = (
-            self.settings.get("max_silence_length", 10000) if self.settings else 10000
+            self.settings_manager.get("max_silence_length", 10000)
         )
 
         logger.debug("PlayerThread initialized")

@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
 )
+from SettingsManager import SettingsManager
 
 from PyRetroPlayer.audio_backends.pyaudio.audio_backend_pyuadio import (
     AudioBackendPyAudio,
@@ -28,7 +29,6 @@ from PyRetroPlayer.playlist.song_info_dialog import SongInfoDialog
 from PyRetroPlayer.playlist.song_library import SongLibrary
 from PyRetroPlayer.scraping.modarchive_scraper import ModArchiveScraper
 from PyRetroPlayer.scraping.msm_scraper import MSMScraper
-from PyRetroPlayer.settings.settings import Settings
 from PyRetroPlayer.web_helper import WebHelper
 
 
@@ -47,13 +47,12 @@ class MainWindow(QMainWindow):
         self.data_dir = os.path.join(user_data_dir(), self.application_name)
         os.makedirs(self.data_dir, exist_ok=True)
 
-        self.settings: Settings = Settings(
+        self.settings_manager: SettingsManager = SettingsManager(
             "configuration",
-            self.config_dir,
             self.application_name,
+            self.config_dir,
         )
-        self.settings.ensure_default_config()
-        self.settings.load()
+        self.settings_manager.load()
 
         self.setWindowTitle(f"{self.application_name} v{self.application_version}")
 
@@ -82,7 +81,7 @@ class MainWindow(QMainWindow):
         self.playlist_ui_manager = PlaylistUIManager(self)
         self.player_control_manager = PlayerControlManager(
             self,
-            self.settings,
+            self.settings_manager,
             play_callback=self.playlist_ui_manager.on_playback_started,
             stop_callback=self.playlist_ui_manager.on_playback_stopped,
             pause_callback=self.playlist_ui_manager.on_playback_paused,
@@ -125,7 +124,7 @@ class MainWindow(QMainWindow):
         self.msm_scraper = MSMScraper()
 
     def load_settings(self) -> None:
-        geometry = self.settings.get("window_geometry")
+        geometry = self.settings_manager.get("window_geometry")
         if geometry:
             try:
                 x, y, w, h = geometry
@@ -134,15 +133,15 @@ class MainWindow(QMainWindow):
                 pass
 
         self.playlist_ui_manager.tab_widget.setCurrentIndex(
-            self.settings.get("last_active_playlist_index", 0)
+            self.settings_manager.get("last_active_playlist_index", 0)
         )
 
     def save_settings(self) -> None:
         geo = self.geometry()
         geometry = [geo.x(), geo.y(), geo.width(), geo.height()]
-        self.settings.set("window_geometry", geometry)
+        self.settings_manager.set("window_geometry", geometry)
 
-        self.settings.set(
+        self.settings_manager.set(
             "last_active_playlist_index",
             self.playlist_ui_manager.tab_widget.currentIndex(),
         )
@@ -152,7 +151,7 @@ class MainWindow(QMainWindow):
 
         self.save_column_managers()
 
-        self.settings.save()
+        self.settings_manager.save()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.save_settings()
@@ -218,7 +217,7 @@ class MainWindow(QMainWindow):
             webbrowser.open(url)
 
     def download_favorite_modules(self) -> None:
-        member_id = self.settings.get("modarchive_member_id", 0)
+        member_id = self.settings_manager.get("modarchive_member_id", 0)
         if member_id == 0:
             return
 

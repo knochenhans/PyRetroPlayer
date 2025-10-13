@@ -6,6 +6,7 @@ from importlib_resources import files
 from loguru import logger
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QFileDialog
+from SettingsManager import SettingsManager
 
 from PyRetroPlayer.main_window import MainWindow
 from PyRetroPlayer.playlist.column_manager import ColumnManager
@@ -13,20 +14,18 @@ from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.playlist_manager import PlaylistManager
 from PyRetroPlayer.playlist.playlist_tab_widget import PlaylistTabWidget
 from PyRetroPlayer.playlist.playlist_tree_view import PlaylistTreeView
-from PyRetroPlayer.settings.settings import Settings
 from PyRetroPlayer.UI.actions_manager import ActionsManager
 
 
 class PlaylistUIManager:
     def __init__(self, main_window: "MainWindow") -> None:
         self.main_window = main_window
-        self.playlist_configuration: Settings = Settings(
+        self.playlist_settings_manager: SettingsManager = SettingsManager(
             "playlist_configuration",
-            main_window.config_dir,
             self.main_window.application_name,
+            main_window.config_dir,
         )
-        self.playlist_configuration.ensure_default_config()
-        self.playlist_configuration.load()
+        self.playlist_settings_manager.load()
 
         self.column_default_definitions: List[Dict[str, Any]] = json.loads(
             files("PyRetroPlayer.data")
@@ -66,7 +65,7 @@ class PlaylistUIManager:
 
     def add_playlist(self, playlist: Playlist, column_manager: ColumnManager) -> None:
         playlist_view = PlaylistTreeView(
-            self.playlist_configuration,
+            self.playlist_settings_manager,
             playlist,
             column_manager,
             self.column_default_definitions,
