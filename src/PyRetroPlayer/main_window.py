@@ -257,10 +257,10 @@ class MainWindow(QMainWindow):
         if not selected_entries:
             return
 
-        from PyRetroPlayer.rescan_entries_worker import RescanEntriesWorker
+        from PyRetroPlayer.scan_entries_worker import ScanEntriesWorker
 
         self.rescan_thread = QThread(self)
-        self.rescan_worker = RescanEntriesWorker(
+        self.rescan_worker = ScanEntriesWorker(
             selected_entries,
             self.song_library,
             self.file_manager,

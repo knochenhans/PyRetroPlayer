@@ -5,10 +5,10 @@ from PySide6.QtCore import QObject, Signal
 from PyRetroPlayer.file_manager import FileManager
 from PyRetroPlayer.playlist.playlist_entry import PlaylistEntry
 from PyRetroPlayer.playlist.song_library import SongLibrary
-from PyRetroPlayer.scraping.modarchive_scraper import ModArchiveScraper
+from PyRetroPlayer.scraping.scraper import Scraper
 
 
-class RescanEntriesWorker(QObject):
+class ScanEntriesWorker(QObject):
     finished = Signal()
     entry_updated = Signal(PlaylistEntry, int, int)
 
@@ -17,13 +17,13 @@ class RescanEntriesWorker(QObject):
         entries: List[PlaylistEntry],
         song_library: SongLibrary,
         file_manager: FileManager,
-        modarchive_scraper: ModArchiveScraper,
+        modarchive_scraper: Scraper,
     ) -> None:
         super().__init__()
         self.entries = entries
         self.song_library = song_library
         self.file_manager = file_manager
-        self.modarchive_scraper = modarchive_scraper
+        self.scraper = modarchive_scraper
 
     def run(self):
         total = len(self.entries)
@@ -32,10 +32,10 @@ class RescanEntriesWorker(QObject):
             if song is None:
                 self.entry_updated.emit(entry, i + 1, total)
                 continue
-            self.file_manager.rescan_song(song)
-            self.modarchive_scraper.scrape(song)
-            self.modarchive_scraper.apply_scraped_data_to_song(song)
-            self.modarchive_scraper.reset()
+            self.file_manager.scan_song(song)
+            self.scraper.scrape(song)
+            self.scraper.apply_scraped_data_to_song(song)
+            self.scraper.reset()
             self.song_library.update_song(song)
             self.entry_updated.emit(entry, i + 1, total)
         self.finished.emit()

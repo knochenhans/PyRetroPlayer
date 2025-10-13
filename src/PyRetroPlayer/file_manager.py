@@ -203,7 +203,7 @@ class FileManager:
             logger.error(f"Failed to fetch {url}: {e}")
             return None
 
-    def rescan_song(self, song: Song) -> Optional[Song]:
+    def scan_song(self, song: Song) -> Optional[Song]:
         if not song or not song.file_path:
             return None
 
