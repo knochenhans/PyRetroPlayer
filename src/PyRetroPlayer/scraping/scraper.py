@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Dict, List
 
 import requests
@@ -24,6 +25,9 @@ class Scraper:
     def scrape(self, song: Song) -> None:
         raise NotImplementedError("Subclasses must implement this method")
 
+    def get_current_date(self) -> str:
+        return datetime.now().strftime("%Y-%m-%d")
+
     def scrape_links(self, child: Tag) -> List[Dict[str, str]]:
         links: List[Dict[str, str]] = []
         for li in child.find_all("li"):
@@ -41,7 +45,7 @@ class Scraper:
         # Extract headers if present
         headers: List[str] = []
         header_row = table.find("tr")
-        if header_row:
+        if header_row and isinstance(header_row, Tag):
             ths = header_row.find_all("th")
             if ths:
                 headers = [th.get_text(strip=True) for th in ths]
@@ -62,7 +66,7 @@ class Scraper:
                 value = cols[1].get_text(strip=True)
                 rows_data.append({key: value})
         return rows_data
-    
+
     def apply_scraped_data_to_song(self, song: Song) -> None:
         song.custom_metadata = {}
         for key, value in self.scraped_data.items():
@@ -70,6 +74,6 @@ class Scraper:
                 song.artist = value
             else:
                 song.custom_metadata[key] = value
-    
+
     def reset(self) -> None:
         self.scraped_data = {}

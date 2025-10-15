@@ -5,6 +5,7 @@ from loguru import logger
 
 from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.scraping.scraper import Scraper
+from urllib.parse import urlparse, parse_qs
 
 
 class ModArchiveScraper(Scraper):
@@ -15,6 +16,16 @@ class ModArchiveScraper(Scraper):
         if not url:
             logger.warning(f"No ModArchive URL found for song: {song.file_path}")
             return
+
+        parsed_url = urlparse(url)
+        query_params = parse_qs(parsed_url.query)
+        modarchive_id = query_params.get("query", [""])[0]
+        
+        if modarchive_id:
+            song.custom_metadata["modarchive_id"] = modarchive_id
+            song.custom_metadata["last_scraped"] = "modarchive"
+            song.custom_metadata["last_scraped_date"] = self.get_current_date()
+            logger.info(f"Found ModArchive ID: {modarchive_id} for song: {song.file_path}")
 
         response = self.session.get(url)
         if response.status_code == 200:
