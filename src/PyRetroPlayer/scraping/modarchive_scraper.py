@@ -22,10 +22,10 @@ class ModArchiveScraper(Scraper):
 
             mod_page_ratings = soup.find("div", class_="mod-page-ratings")
 
-            if mod_page_ratings:
+            if mod_page_ratings and isinstance(mod_page_ratings, Tag):
                 stats_li: List[Tag] = mod_page_ratings.find_all("li", class_="stats")
 
-                if isinstance(stats_li, list) and len(stats_li) == 2:
+                if len(stats_li) == 2:
                     ratings: Dict[str, str] = {}
                     member_rating = stats_li[0].get_text().split(":")[-1].strip()
                     reviewer_rating = stats_li[1].get_text().split(":")[-1].strip()
@@ -47,7 +47,7 @@ class ModArchiveScraper(Scraper):
 
             mod_page_comments = soup.find("div", class_="mod-page-comments")
 
-            if mod_page_comments:
+            if mod_page_comments and isinstance(mod_page_comments, Tag):
                 comments_data: List[Dict[str, str]] = []
                 comments: List[Tag] = mod_page_comments.find_all(
                     "div", class_="comment-listing"

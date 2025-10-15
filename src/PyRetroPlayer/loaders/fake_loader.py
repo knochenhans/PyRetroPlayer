@@ -13,7 +13,7 @@ class FakeLoader(AbstractLoader):
     priority = 10
 
     def __init__(self, player_backends: Dict[str, Callable[[], PlayerBackend]]) -> None:
-        super().__init__(player_backends)
+        super().__init__(player_backends, list(player_backends.keys()))
 
         self.loading_thread: Optional[threading.Thread] = None
 
@@ -43,7 +43,7 @@ class FakeLoader(AbstractLoader):
             song.file_path = file_path
             song.title = file_path.split("/")[-1]
             song.artist = "Unknown Artist"
-            song.available_backends = "FakeBackend"
+            song.available_backends = ["FakeBackend"]
             song.duration = 10000  # Fake duration of 10000 milliseconds
             song.is_ready = True
 

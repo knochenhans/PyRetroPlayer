@@ -150,7 +150,7 @@ class WebHelper:
 
         if song.custom_metadata.get("modarchive_id"):
             is_favorite = (
-                song.custom_metadata["modarchive_id"] in member_favorites_id_list
+                song.custom_metadata.get("modarchive_id") in member_favorites_id_list
             )
             # self.ui_manager.set_favorite_button_state(is_favorite)
 
