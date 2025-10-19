@@ -112,9 +112,9 @@ class SongInfoDialog(QDialog):
             for key, value in self.song.custom_metadata.items():
                 add_metadata_rows(key, value)
 
-    def eventFilter(self, obj: QObject, event: QEvent):
-        if obj == self.list_view.viewport() and event.type() == QEvent.Type.ToolTip:
-            index = self.list_view.indexAt(event.pos())
+    def eventFilter(self, arg__1: QObject, arg__2: QEvent) -> bool:
+        if arg__1 == self.list_view.viewport() and arg__2.type() == QEvent.Type.ToolTip:
+            index = self.list_view.indexAt(arg__2.pos())
             if index.isValid():
                 value_index = index.siblingAtColumn(1)
                 value = value_index.data()
@@ -122,14 +122,12 @@ class SongInfoDialog(QDialog):
                     # Show tooltip with value content
                     from PySide6.QtWidgets import QToolTip
 
-                    QToolTip.showText(
-                        event.globalPos(), str(value), self.list_view
-                    )
+                    QToolTip.showText(arg__2.globalPos(), str(value), self.list_view)
                     return True
             # Hide tooltip if not valid
             from PySide6.QtWidgets import QToolTip
 
             QToolTip.hideText()
-            event.ignore()
+            arg__2.ignore()
             return True
-        return super().eventFilter(obj, event)
+        return super().eventFilter(arg__1, arg__2)

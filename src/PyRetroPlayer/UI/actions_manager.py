@@ -84,7 +84,7 @@ class ActionsManager:
             "view-refresh",
             "Rescan Songs",
             "Rescan the current songs and update metadata",
-            lambda main_window: main_window.scan_selected_songs,
+            lambda main_window: main_window.scan_selected_entries,
         )
     ]
 

@@ -244,7 +244,7 @@ class MainWindow(QMainWindow):
             dialog = SongInfoDialog(current_song, self.ui_manager.font_manager, self)
             dialog.exec()
 
-    def scan_selected_songs(self) -> None:
+    def scan_selected_entries(self) -> None:
         current_tree_view = self.playlist_ui_manager.get_current_tree_view()
         if current_tree_view is None:
             return None
@@ -253,11 +253,14 @@ class MainWindow(QMainWindow):
         if not selected_entries:
             return
 
+        self.scan_entries(selected_entries)
+
+    def scan_entries(self, entries: List[PlaylistEntry]) -> None:
         from PyRetroPlayer.scan_entries_worker import ScanEntriesWorker
 
         self.scan_thread = QThread(self)
         self.scan_worker = ScanEntriesWorker(
-            selected_entries,
+            entries,
             self.song_library,
             self.file_manager,
             self.modarchive_scraper,
@@ -269,8 +272,6 @@ class MainWindow(QMainWindow):
         self.scan_thread.finished.connect(self.scan_thread.deleteLater)
         self.scan_worker.entry_updated.connect(self.update_playlist_entry)
         self.scan_thread.start()
-
-        logger.info("Started rescanning selected songs asynchronously.")
 
     def update_playlist_entry(
         self, entry: PlaylistEntry, current: int, total: int

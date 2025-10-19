@@ -23,11 +23,12 @@ class Playlist:
         self.song_playing: Optional[Callable[[Optional[PlaylistEntry]], None]] = None
         self.current_song_index: int = -1
 
-    def add_song(self, song_id: str) -> None:
+    def add_song(self, song_id: str) -> PlaylistEntry:
         entry = PlaylistEntry(song_id)
         self.entries.append(entry)
         if self.song_added:
             self.song_added(entry)
+        return entry
 
     def add_entry(self, entry: PlaylistEntry) -> None:
         self.entries.append(entry)
