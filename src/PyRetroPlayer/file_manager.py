@@ -79,7 +79,8 @@ class FileManager:
         id = self.main_window.song_library.add_song(song)
         playlist = self.get_current_playlist()
         if playlist:
-            playlist.add_song(id)
+            entry = playlist.add_song(id)
+            self.main_window.scan_entries([entry])
 
         self.files_remaining -= 1
         self.main_window.ui_manager.update_loading_progress_bar(
