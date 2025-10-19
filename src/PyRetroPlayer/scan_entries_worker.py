@@ -1,3 +1,4 @@
+import threading
 from typing import List
 
 from PySide6.QtCore import QObject, Signal
@@ -38,4 +39,6 @@ class ScanEntriesWorker(QObject):
             self.scraper.reset()
             self.song_library.update_song(song)
             self.entry_updated.emit(entry, i + 1, total)
+
+            threading.Event().wait(0.5)
         self.finished.emit()
