@@ -22,8 +22,6 @@ class PlaylistUIManager:
         self.main_window = main_window
         self.playlist_settings_manager: SettingsManager = SettingsManager(
             "playlist_configuration",
-            self.main_window.application_name,
-            main_window.config_dir,
         )
         self.playlist_settings_manager.load()
 

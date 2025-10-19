@@ -3,8 +3,7 @@ import sys
 import webbrowser
 from typing import Any, Dict, List, Optional
 
-from appdirs import user_config_dir, user_data_dir
-from loguru import logger
+from appdirs import user_data_dir
 from PySide6.QtCore import QThread
 from PySide6.QtGui import QAction, QCloseEvent, QIcon
 from PySide6.QtWidgets import (
@@ -41,16 +40,13 @@ class MainWindow(QMainWindow):
         self.icon = QIcon.fromTheme("media-playback-start")
         self.setWindowIcon(self.icon)
 
-        self.config_dir = os.path.join(user_config_dir(), self.application_name)
-        os.makedirs(self.config_dir, exist_ok=True)
-
         self.data_dir = os.path.join(user_data_dir(), self.application_name)
         os.makedirs(self.data_dir, exist_ok=True)
 
+        SettingsManager.set_app_name(self.application_name)
+
         self.settings_manager: SettingsManager = SettingsManager(
             "configuration",
-            self.application_name,
-            self.config_dir,
         )
         self.settings_manager.load()
 
