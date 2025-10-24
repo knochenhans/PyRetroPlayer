@@ -1,4 +1,4 @@
-import contextlib
+import threading
 import time
 from typing import Optional
 
@@ -16,6 +16,10 @@ class AudioBackendPyAudio(AudioBackend):
 
         self.p: Optional[PyAudio] = None
         self.stream: Optional[Stream] = None
+
+        self._lock = threading.RLock()
+        self._closed = False
+
         self._init_stream()
         logger.debug(
             "PyAudio AudioBackend initialized with samplerate: {} and buffersize: {}",
@@ -25,15 +29,14 @@ class AudioBackendPyAudio(AudioBackend):
 
     def _init_stream(self) -> None:
         try:
-            with contextlib.redirect_stdout(None):
-                self.p = PyAudio()
-                self.stream = self.p.open(
-                    format=get_format_from_width(2),
-                    channels=2,
-                    rate=self.samplerate,
-                    output=True,
-                    frames_per_buffer=self.buffersize,
-                )
+            self.p = PyAudio()
+            self.stream = self.p.open(
+                format=get_format_from_width(2),
+                channels=2,
+                rate=self.samplerate,
+                output=True,
+                frames_per_buffer=self.buffersize,
+            )
             logger.debug("PyAudio stream successfully opened.")
         except Exception as e:
             logger.error("Failed to initialize PyAudio stream: {}", e)
@@ -50,23 +53,21 @@ class AudioBackendPyAudio(AudioBackend):
         return True
 
     def write(self, data: bytes) -> None:
-        """Write data safely, recovering from temporary errors."""
-        if not self._ensure_stream():
-            return
-
         if self.stream is None:
-            logger.error("No active PyAudio stream available.")
+            logger.error("No active PyAudio stream available for writing.")
             return
 
-        try:
-            self.stream.write(data)
-        except OSError as e:
-            logger.warning("PyAudio write error: {} — attempting recovery.", e)
-            time.sleep(0.05)
-
-            self._init_stream()
-        except Exception as e:
-            logger.exception("Unexpected error during PyAudio write: {}", e)
+        with self._lock:
+            if self._closed or not self._ensure_stream():
+                return
+            try:
+                self.stream.write(data)
+            except OSError as e:
+                logger.warning("PyAudio write error: {} — attempting recovery.", e)
+                time.sleep(0.05)
+                self._init_stream()
+            except Exception as e:
+                logger.exception("Unexpected error during PyAudio write: {}", e)
 
     def reset(self) -> None:
         if self.stream is None:
@@ -85,19 +86,20 @@ class AudioBackendPyAudio(AudioBackend):
             self._init_stream()
 
     def stop(self) -> None:
-        try:
-            if self.stream:
-                if self.stream.is_active():
-                    self.stream.stop_stream()
-                self.stream.close()
-            if self.p:
-                self.p.terminate()
-            logger.debug("PyAudio AudioBackend stopped cleanly.")
-        except Exception as e:
-            logger.warning("Error while stopping PyAudio backend: {}", e)
-        finally:
-            self.stream = None
-            self.p = None
+        with self._lock:
+            self._closed = True
+            try:
+                if self.stream:
+                    if self.stream.is_active():
+                        self.stream.stop_stream()
+                    self.stream.close()
+                if self.p:
+                    self.p.terminate()
+            except Exception as e:
+                logger.warning("Error while stopping PyAudio backend: {}", e)
+            finally:
+                self.stream = None
+                self.p = None
 
     def close(self) -> None:
         self.stop()
