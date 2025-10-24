@@ -1,11 +1,11 @@
 from typing import Dict, List, Optional
+from urllib.parse import parse_qs, urlparse
 
 from bs4 import BeautifulSoup, Tag
 from loguru import logger
 
 from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.scraping.scraper import Scraper
-from urllib.parse import urlparse, parse_qs
 
 
 class ModArchiveScraper(Scraper):
@@ -20,12 +20,14 @@ class ModArchiveScraper(Scraper):
         parsed_url = urlparse(url)
         query_params = parse_qs(parsed_url.query)
         modarchive_id = query_params.get("query", [""])[0]
-        
+
         if modarchive_id:
-            song.custom_metadata["modarchive_id"] = modarchive_id
-            song.custom_metadata["last_scraped"] = "modarchive"
-            song.custom_metadata["last_scraped_date"] = self.get_current_date()
-            logger.info(f"Found ModArchive ID: {modarchive_id} for song: {song.file_path}")
+            self.scraped_data["modarchive_id"] = modarchive_id
+            self.scraped_data["last_scraped"] = "modarchive"
+            self.scraped_data["last_scraped_date"] = self.get_current_date()
+            logger.info(
+                f"Found ModArchive ID: {modarchive_id} for song: {song.file_path}"
+            )
 
         response = self.session.get(url)
         if response.status_code == 200:
@@ -56,6 +58,27 @@ class ModArchiveScraper(Scraper):
                 if artist_tag is not None:
                     self.scraped_data["artist"] = artist_tag.get_text(strip=True)
 
+                current_section = ""
+
+                for child in mod_page_archive_info.children:
+                    if isinstance(child, Tag):
+                        if child.name == "h2":
+                            current_section = child.get_text(strip=True)
+                        elif (
+                            current_section == "Info"
+                            and child.name == "ul"
+                            and "nolist" in child.get("class", [])
+                        ):
+                            for li in child.find_all("li"):
+                                text = li.get_text(strip=True)
+                                key, value = text.split(":", 1)
+                                self.scraped_data[key.strip()] = value.strip()
+
+            if not song.md5 == self.scraped_data.get("MD5", ""):
+                logger.warning(
+                    f"MD5 mismatch for song: {song.file_path} (local: {song.md5}, modarchive: {self.scraped_data.get('MD5', '')}, skipping further scraping.)"
+                )
+
             mod_page_comments = soup.find("div", class_="mod-page-comments")
 
             if mod_page_comments and isinstance(mod_page_comments, Tag):
@@ -75,7 +98,7 @@ class ModArchiveScraper(Scraper):
 
                 self.scraped_data["comments"] = comments_data
 
-        self.apply_scraped_data_to_song(song)
+        # self.apply_scraped_data_to_song(song)
 
     def get_url(self, song: Song) -> str:
         logger.info(f"Looking up ModArchive URL for song: {song.file_path}")

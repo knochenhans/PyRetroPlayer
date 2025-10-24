@@ -68,12 +68,11 @@ class Scraper:
         return rows_data
 
     def apply_scraped_data_to_song(self, song: Song) -> None:
-        song.custom_metadata = {}
         for key, value in self.scraped_data.items():
             if key == "artist" and isinstance(value, str):
                 song.artist = value
             else:
-                song.custom_metadata[key] = value
+                song.custom_metadata.update({key: value})
 
     def reset(self) -> None:
         self.scraped_data = {}
