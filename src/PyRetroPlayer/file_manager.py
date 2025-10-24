@@ -83,15 +83,17 @@ class FileManager:
             self.main_window.scan_entries([entry])
 
         self.files_remaining -= 1
-        self.main_window.ui_manager.update_loading_progress_bar(
-            self.total_files - self.files_remaining, self.total_files
-        )
+        #BUG: fix
+        # self.main_window.ui_manager.update_loading_progress_bar(
+        #     self.total_files - self.files_remaining, self.total_files
+        # )
         logger.info(f"Loaded song: {song.title} by {song.artist}")
 
     def on_all_songs_loaded(self) -> None:
-        self.main_window.ui_manager.update_loading_progress_bar(
-            self.total_files, self.total_files
-        )
+        #BUG: fix
+        # self.main_window.ui_manager.update_loading_progress_bar(
+        #     self.total_files, self.total_files
+        # )
         logger.info("All songs have been loaded.")
         if self.file_loader:
             self.file_loader.cleanup()
