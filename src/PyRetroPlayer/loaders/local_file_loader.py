@@ -58,10 +58,11 @@ class ModuleTester:
                     self.song = player_backend.song
                     self.emitter.song_info_retrieved(self.song)
                     info_retrieved = True
-                try:
-                    player_backend.cleanup()
-                except Exception:
-                    logger.exception("Error during backend.cleanup()")
+            try:
+                player_backend.cleanup()
+            except Exception:
+                logger.exception("Error during backend.cleanup()")
+                
         if not self.song.available_backends:
             self.song.available_backends = []
             logger.warning(
