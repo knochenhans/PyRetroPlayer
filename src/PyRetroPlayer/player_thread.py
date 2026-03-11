@@ -1,12 +1,12 @@
 import threading
 import time
-from typing import Callable, Optional
 
 from loguru import logger
 from SettingsManager import SettingsManager
 
 from PyRetroPlayer.audio_backends.audio_backend import AudioBackend
 from PyRetroPlayer.player_backends.player_backend import PlayerBackend
+from PyRetroPlayer.player_events import PlayerEvents
 
 
 class PlayerThread(threading.Thread):
@@ -15,18 +15,16 @@ class PlayerThread(threading.Thread):
         player_backend: PlayerBackend,
         audio_backend: AudioBackend,
         settings_manager: SettingsManager,
-        on_position_changed: Optional[Callable[[int, int], None]] = None,
-        on_song_finished: Optional[Callable[[], None]] = None,
+        events: PlayerEvents,
     ) -> None:
         super().__init__(daemon=True)  # daemon=True so it won’t block program exit
         self.player_backend = player_backend
         self.audio_backend = audio_backend
-        self.on_position_changed = on_position_changed
-        self.on_song_finished = on_song_finished
         self.settings_manager = settings_manager
+        self.events = events
 
-        self.stop_flag = threading.Event()
-        self.pause_flag = threading.Event()
+        self.stop_flag: threading.Event = threading.Event()
+        self.pause_flag: threading.Event = threading.Event()
 
         self.max_silence_length_ms = (
             self.settings_manager.get("max_silence_length", 10000)
@@ -73,11 +71,11 @@ class PlayerThread(threading.Thread):
             self.audio_backend.write(buffer)
 
             current_position = self.player_backend.get_position_milliseconds()
-            if not self.stop_flag.is_set() and self.on_position_changed:
-                self.on_position_changed(current_position, module_length)
+            if not self.stop_flag.is_set():
+                self.events.position_changed.emit(current_position, module_length)
 
-        if count == 0 and self.on_song_finished:
-            self.on_song_finished()
+        if count == 0:
+            self.events.song_finished.emit()
             logger.debug("Song finished")
 
         self.audio_backend.reset()
