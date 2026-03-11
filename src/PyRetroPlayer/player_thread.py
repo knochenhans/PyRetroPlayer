@@ -56,7 +56,7 @@ class PlayerThread(threading.Thread):
                 break
 
             # check if only contains silence
-            if all(sample == 0 for sample in buffer):
+            if not any(buffer):
                 silence_length_ms += (
                     len(buffer) / (self.audio_backend.samplerate * 2) * 1000
                 )
