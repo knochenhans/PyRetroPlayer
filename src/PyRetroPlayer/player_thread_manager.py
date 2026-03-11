@@ -38,15 +38,15 @@ class PlayerThreadManager:
         if self.player_thread:
             self.player_thread.start()
 
-    def pause(self):
+    def pause(self) -> None:
         if self.player_thread:
             self.player_thread.pause()
 
-    def stop(self):
+    def stop(self) -> None:
         if self.player_thread:
             self.player_thread.stop()
             self.player_thread.join()
             self.player_thread = None
 
-    def is_active(self):
+    def is_active(self) -> bool:
         return self.player_thread is not None

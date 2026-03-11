@@ -26,8 +26,8 @@ class PlayerThread(threading.Thread):
         self.stop_flag: threading.Event = threading.Event()
         self.pause_flag: threading.Event = threading.Event()
 
-        self.max_silence_length_ms = (
-            self.settings_manager.get("max_silence_length", 10000)
+        self.max_silence_length_ms = self.settings_manager.get(
+            "max_silence_length", 10000
         )
 
         logger.debug("PlayerThread initialized")
