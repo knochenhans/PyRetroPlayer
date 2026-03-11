@@ -45,6 +45,7 @@ class PlayerThreadManager:
     def stop(self):
         if self.player_thread:
             self.player_thread.stop()
+            self.player_thread.join()
             self.player_thread = None
 
     def is_active(self):
