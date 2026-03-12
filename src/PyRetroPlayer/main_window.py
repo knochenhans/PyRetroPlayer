@@ -3,8 +3,11 @@ import sys
 import webbrowser
 from typing import Any, Dict, List, Optional
 
+import dbus
+import dbus.mainloop.glib
 from appdirs import user_data_dir
-from PySide6.QtCore import QThread
+from gi.repository import GLib
+from PySide6.QtCore import QThread, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QIcon
 from PySide6.QtWidgets import (
     QApplication,
@@ -284,9 +287,26 @@ class MainWindow(QMainWindow):
         self.ui_manager.update_loading_progress_bar(current, total)
 
 
+def integrate_glib_loop() -> None:
+    context: GLib.MainContext = GLib.MainContext.default()
+
+    def iterate() -> None:
+        while context.pending():
+            context.iteration(False)
+
+
 if __name__ == "__main__":
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
     app: QApplication = QApplication(sys.argv)
+
+    integrate_glib_loop()
+
     window: MainWindow = MainWindow()
     window.resize(800, 600)
     window.show()
     sys.exit(app.exec())
+
+    timer: QTimer = QTimer()
+    timer.timeout.connect(iterate)
+    timer.start(50)

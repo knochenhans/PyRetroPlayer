@@ -5,6 +5,7 @@ from loguru import logger
 from SettingsManager import SettingsManager
 
 from PyRetroPlayer.main_window import MainWindow
+from PyRetroPlayer.mpris.mpris_controller import MPRISPlayer
 from PyRetroPlayer.player_thread_manager import PlayerThreadManager
 from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.song import Song
@@ -42,6 +43,11 @@ class PlayerControlManager:
         self.current_playlist: Optional[Playlist] = None
         self.current_playlist_index = -1
         self.current_backend = None
+
+        from PyRetroPlayer.mpris.mpris_controller_core import MPRISControllerCore
+
+        self.mpris_controller_core = MPRISControllerCore(self)
+        self.mpris_player = MPRISPlayer(self.mpris_controller_core)
 
         # Add callbacks for UI buttons
         self.play_callback = play_callback
