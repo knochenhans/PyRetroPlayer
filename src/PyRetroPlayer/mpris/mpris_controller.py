@@ -43,8 +43,16 @@ class MPRISPlayer(dbus.service.Object):
             }
 
         if interface_name == "org.mpris.MediaPlayer2.Player":
+            metadata = dbus.Dictionary(
+                {
+                    "xesam:title": "Test Song",
+                    "xesam:artist": dbus.Array(["Test Artist"], signature="s"),
+                },
+                signature="sv",
+            )
             return {
                 "PlaybackStatus": "Playing" if self.player.playing else "Paused",
+                "Metadata": metadata,
                 "CanPlay": True,
                 "CanPause": True,
                 "CanGoNext": True,
@@ -57,19 +65,37 @@ class MPRISPlayer(dbus.service.Object):
     @dbus.service.method("org.mpris.MediaPlayer2.Player")  # type: ignore
     def Play(self) -> None:
         self.player.play()
+        self._update_playback()
 
     @dbus.service.method("org.mpris.MediaPlayer2.Player")  # type: ignore
     def Pause(self) -> None:
         self.player.pause()
+        self._update_playback()
 
     @dbus.service.method("org.mpris.MediaPlayer2.Player")  # type: ignore
     def PlayPause(self) -> None:
         self.player.toggle()
+        self._update_playback()
 
     @dbus.service.method("org.mpris.MediaPlayer2.Player")  # type: ignore
     def Next(self) -> None:
         self.player.next()
+        self._update_playback()
 
     @dbus.service.method("org.mpris.MediaPlayer2.Player")  # type: ignore
     def Previous(self) -> None:
         self.player.previous()
+        self._update_playback()
+
+    @dbus.service.signal("org.freedesktop.DBus.Properties", signature="sa{sv}as")  # type: ignore
+    def PropertiesChanged(
+        self, interface: str, changed: dict[str, object], invalidated: list[str]
+    ) -> None:
+        pass
+
+    def _update_playback(self) -> None:
+        self.PropertiesChanged(
+            "org.mpris.MediaPlayer2.Player",
+            {"PlaybackStatus": "Playing" if self.player.playing else "Paused"},
+            [],
+        )
