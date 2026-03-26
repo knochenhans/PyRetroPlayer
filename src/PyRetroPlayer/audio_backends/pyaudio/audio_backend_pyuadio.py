@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from loguru import logger
 from pyaudio import PyAudio, Stream, get_format_from_width
@@ -106,3 +106,6 @@ class AudioBackendPyAudio(AudioBackend):
 
     def get_buffer(self) -> bytes:
         return self.buffer
+
+    def set_meta_data(self, meta_data: Dict[str, Any]) -> None:
+        logger.debug("PyAudio backend received meta data: {}", meta_data)

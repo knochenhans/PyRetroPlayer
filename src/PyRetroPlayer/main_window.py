@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 from SettingsManager import SettingsManager
 
+from PyRetroPlayer.audio_backends.audio_backend_wav import AudioBackendWav
 from PyRetroPlayer.audio_backends.pyaudio.audio_backend_pyuadio import (
     AudioBackendPyAudio,
 )
@@ -68,7 +69,10 @@ class MainWindow(QMainWindow):
             # "FakeBackend",
         ]
 
-        self.audio_backends: Dict[str, Any] = {"PyAudio": lambda: AudioBackendPyAudio()}
+        self.audio_backends: Dict[str, Any] = {
+            "PyAudio": lambda: AudioBackendPyAudio(),
+            "WAV": lambda: AudioBackendWav(),
+        }
         self.audio_backend = self.audio_backends["PyAudio"]()
 
         from PyRetroPlayer.file_manager import FileManager

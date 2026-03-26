@@ -102,6 +102,8 @@ class PlayerControlManager:
                 self.player_thread_manager.stop()
             case (self.PlayerState.PLAYING, self.PlayerState.PLAYING):
                 self.player_thread_manager.pause()
+            case (self.PlayerState.STOPPED, self.PlayerState.STOPPED):
+                self.player_thread_manager.stop()
             case _:
                 logger.warning(
                     f"Unhandled state transition from {self.state} to {new_state}"

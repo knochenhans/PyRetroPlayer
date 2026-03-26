@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Dict
 
 
 class AudioBackend(ABC):
@@ -21,4 +21,8 @@ class AudioBackend(ABC):
 
     @abstractmethod
     def get_buffer(self) -> Any:
+        pass
+
+    @abstractmethod
+    def set_meta_data(self, meta_data: Dict[str, Any]) -> None:
         pass
