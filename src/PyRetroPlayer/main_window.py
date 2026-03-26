@@ -3,10 +3,10 @@ import sys
 import webbrowser
 from typing import Any, Dict, List, Optional
 
-import dbus
-import dbus.mainloop.glib
+import dbus  # type: ignore
+import dbus.mainloop.glib  # type: ignore
 from appdirs import user_data_dir
-from gi.repository import GLib
+from gi.repository import GLib  # type: ignore
 from PySide6.QtCore import QThread, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QIcon
 from PySide6.QtWidgets import (
