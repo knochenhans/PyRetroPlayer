@@ -220,7 +220,7 @@ class PlaylistTreeView(QTreeView):
 
     def update_entry(self, entry: PlaylistEntry) -> None:
         try:
-            row = self.playlist.get_song_ids().index(entry.song_id)
+            row = self.playlist.get_song_entry_ids().index(entry.entry_id)
             row_data = self.build_row_data(entry)
             for col_idx, column_def in enumerate(self.default_columns_definitions):
                 col_id = column_def.get("id", "")
@@ -230,7 +230,7 @@ class PlaylistTreeView(QTreeView):
             logger.info(f"Updated playlist entry at row {row}")
         except ValueError:
             logger.warning(
-                f"Song ID {entry.song_id} not found in playlist; cannot update row."
+                f"Playlist entry ID {entry.entry_id} not found in playlist; cannot update row."
             )
 
     def get_selected_rows(self) -> List[int]:

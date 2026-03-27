@@ -12,4 +12,6 @@ class PlaylistEntry:
 
     @staticmethod
     def from_dict(data: Dict[str, str]) -> "PlaylistEntry":
-        return PlaylistEntry(song_id=data["song_id"], entry_id=data.get("entry_id"))
+        return PlaylistEntry(
+            song_id=data.get("song_id", ""), entry_id=data.get("entry_id")
+        )

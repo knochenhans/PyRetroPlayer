@@ -61,6 +61,9 @@ class Playlist:
     def get_song_ids(self) -> List[str]:
         return [entry.song_id for entry in self.entries]
 
+    def get_song_entry_ids(self) -> List[str]:
+        return [entry.entry_id for entry in self.entries]
+
     def get_entries(self) -> List[PlaylistEntry]:
         return self.entries
 
