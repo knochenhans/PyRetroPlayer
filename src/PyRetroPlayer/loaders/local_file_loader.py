@@ -8,6 +8,7 @@ from loguru import logger
 
 from PyRetroPlayer.loaders.abstract_loader import AbstractLoader
 from PyRetroPlayer.player_backends.player_backend import PlayerBackend
+from PyRetroPlayer.playlist.loader_events import LoaderEvents
 from PyRetroPlayer.playlist.song import Song
 
 
@@ -62,7 +63,7 @@ class ModuleTester:
                 player_backend.cleanup()
             except Exception:
                 logger.exception("Error during backend.cleanup()")
-                
+
         if not self.song.available_backends:
             self.song.available_backends = []
             logger.warning(
@@ -80,12 +81,14 @@ class LocalFileLoaderWorker:
         player_backends: Dict[str, Callable[[], PlayerBackend]],
         player_backends_priority: List[str],
         loader: "LocalFileLoader",
+        events: LoaderEvents,
     ) -> None:
         self.song: Song = song
         self.player_backends: Dict[str, Callable[[], PlayerBackend]] = player_backends
         self.player_backends_priority: List[str] = player_backends_priority
         # keep weakref to avoid reference cycles / lifetime issues
         self.loader = weakref.ref(loader)
+        self.events: LoaderEvents = events
         self.emitter = SongEmitter(
             self.song_checked_callback, self.song_info_retrieved_callback
         )
@@ -107,28 +110,22 @@ class LocalFileLoaderWorker:
             )
         finally:
             # Always notify loader that this song finished (success or failure)
-            loader = self.loader()
-            if loader:
-                try:
-                    loader.song_finished_loading()
-                except Exception:
-                    logger.exception("Exception in loader.song_finished_loading()")
+            try:
+                self.events.song_finished.emit()
+            except Exception:
+                logger.exception("Exception in loader.song_finished_loading()")
 
     def song_checked_callback(self, song: Optional[Song]) -> None:
-        loader = self.loader()
-        if loader and loader.song_loaded_callback:
-            try:
-                loader.song_loaded_callback(song)
-            except Exception:
-                logger.exception("Exception in song_loaded_callback")
+        try:
+            self.events.song_loaded.emit(song)
+        except Exception:
+            logger.exception("Exception in song_loaded_callback")
 
     def song_info_retrieved_callback(self, song: Song) -> None:
-        loader = self.loader()
-        if loader and loader.song_info_retrieved_callback:
-            try:
-                loader.song_info_retrieved_callback(song)
-            except Exception:
-                logger.exception("Exception in song_info_retrieved_callback")
+        try:
+            self.events.song_info_retrieved.emit(song)
+        except Exception:
+            logger.exception("Exception in song_info_retrieved_callback")
 
 
 class LocalFileLoader(AbstractLoader):
@@ -137,6 +134,7 @@ class LocalFileLoader(AbstractLoader):
         player_backends: Dict[str, Callable[[], PlayerBackend]],
         player_backends_priority: List[str],
         max_workers: int = 1,
+        events: Optional[LoaderEvents] = None,
     ) -> None:
         super().__init__(player_backends, player_backends_priority)
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
@@ -144,6 +142,7 @@ class LocalFileLoader(AbstractLoader):
         self._futures: List[Future[None]] = (
             []
         )  # keep futures so we can inspect/exceptions/shutdown
+        self.loader_events: LoaderEvents = events or LoaderEvents()
 
     def cleanup(self) -> None:
         # Shut down executor cleanly
@@ -167,7 +166,11 @@ class LocalFileLoader(AbstractLoader):
             song = self.load_song_from_path(file_name)
             if song:
                 worker = LocalFileLoaderWorker(
-                    song, self.player_backends, self.player_backends_priority, self
+                    song,
+                    self.player_backends,
+                    self.player_backends_priority,
+                    self,
+                    self.loader_events,
                 )
                 future = self.executor.submit(worker)
                 # add done callback to log exceptions (optional)

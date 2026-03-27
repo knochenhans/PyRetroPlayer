@@ -3,6 +3,7 @@ from typing import Callable, Dict, List, Optional
 from loguru import logger
 
 from PyRetroPlayer.player_backends.player_backend import PlayerBackend
+from PyRetroPlayer.playlist.loader_events import LoaderEvents
 from PyRetroPlayer.playlist.song import Song
 
 
@@ -11,9 +12,11 @@ class AbstractLoader:
         self,
         player_backends: Dict[str, Callable[[], PlayerBackend]],
         player_backends_priority: List[str],
+        events: Optional[LoaderEvents] = None,
     ) -> None:
         self.player_backends = player_backends
         self.player_backends_priority = player_backends_priority
+        self.loader_events: LoaderEvents = events or LoaderEvents()
         self.song_loaded_callback: Optional[Callable[[Optional[Song]], None]] = None
         self.song_info_retrieved_callback: Optional[
             Callable[[Optional[Song]], None]
