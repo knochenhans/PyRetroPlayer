@@ -48,6 +48,7 @@ class PlayerControlManager:
 
         self.mpris_controller_core = MPRISControllerCore(self)
         self.mpris_player = MPRISPlayer(self.mpris_controller_core)
+        self.mpris_player.update_playback()
 
         # Add callbacks for UI buttons
         self.play_callback = play_callback
@@ -81,6 +82,16 @@ class PlayerControlManager:
 
                 if song:
                     self.on_current_song_changed(song)
+
+                    meta_data = {
+                        "title": (
+                            song.file_path.split("/")[-1]
+                            if song.title == ""
+                            else song.title
+                        ),
+                    }
+
+                    self.main_window.audio_backend.set_meta_data(meta_data)
                     self.play_song(song)
 
                 if next_entry:
@@ -131,6 +142,12 @@ class PlayerControlManager:
             song_title += f" - {song.artist}"
         self.main_window.tray_manager.show_tray_notification("Now Playing", song_title)
         self.main_window.ui_manager.update_window_title(song_title)
+        self.mpris_player.update_metadata(
+            {
+                "title": song.title,
+                "artist": song.artist,
+            }
+        )
 
         comments = song.custom_metadata.get("comments", [])
 
@@ -153,6 +170,7 @@ class PlayerControlManager:
 
     def on_play_pressed(self) -> None:
         self.set_player_state(self.PlayerState.PLAYING)
+        self.mpris_player.update_playback()
 
     def on_pause_pressed(self) -> None:
         if self.state == self.PlayerState.PLAYING:
@@ -207,17 +225,6 @@ class PlayerControlManager:
                     self.set_player_state(self.PlayerState.STOPPED)
                     return
         self.set_player_state(self.PlayerState.PLAYING)
-        # song = self.queue_manager.pop_next_song()
-
-        # if song:
-        #     pass
-        # else:
-        #     if PlayingMode.RANDOM:
-        #         self.populate_queue()
-        #         song = self.queue_manager.pop_next_song()
-
-        #         if song:
-        #             self.play_module(song)
 
     def play_song_from_index(self, start_index: int, playlist: Playlist) -> None:
         self.set_player_state(self.PlayerState.STOPPED)

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import dbus  # type: ignore
 import dbus.service  # type: ignore
@@ -17,6 +17,7 @@ class MPRISPlayer(dbus.service.Object):
         super().__init__(name, OBJECT_PATH)  # type: ignore
 
         self.player: MPRISControllerCore = player
+        self.current_metadata: Dict[str, Any] = {}
 
     @dbus.service.method(  # type: ignore
         "org.freedesktop.DBus.Properties",
@@ -37,23 +38,23 @@ class MPRISPlayer(dbus.service.Object):
                 "CanQuit": True,
                 "CanRaise": False,
                 "HasTrackList": False,
-                "Identity": "Qt Test Player",
+                "Identity": "PyRetroPlayer",
                 "SupportedUriSchemes": dbus.Array(["file"], signature="s"),  # type: ignore
                 "SupportedMimeTypes": dbus.Array([], signature="s"),  # type: ignore
             }
 
         if interface_name == "org.mpris.MediaPlayer2.Player":
-            metadata = dbus.Dictionary(
-                {
-                    "xesam:title": "Test Song",
-                    "xesam:artist": dbus.Array(["Test Artist"], signature="s"),
-                },
-                signature="sv",
-            )
+            if not self.player.has_media:
+                status = "Stopped"
+            elif self.player.playing:
+                status = "Playing"
+            else:
+                status = "Paused"
+
             return {
-                "PlaybackStatus": "Playing" if self.player.playing else "Paused",
-                "Metadata": metadata,
-                "CanPlay": True,
+                "PlaybackStatus": status,
+                "CanPlay": self.player.has_media,
+                "Metadata": self.get_metadata(),  # type: ignore
                 "CanPause": True,
                 "CanGoNext": True,
                 "CanGoPrevious": True,
@@ -64,38 +65,69 @@ class MPRISPlayer(dbus.service.Object):
 
     @dbus.service.method("org.mpris.MediaPlayer2.Player")  # type: ignore
     def Play(self) -> None:
-        self.player.play()
-        self._update_playback()
+        self.player.external_play()
+        self.update_playback()
 
     @dbus.service.method("org.mpris.MediaPlayer2.Player")  # type: ignore
     def Pause(self) -> None:
         self.player.pause()
-        self._update_playback()
+        self.update_playback()
 
     @dbus.service.method("org.mpris.MediaPlayer2.Player")  # type: ignore
     def PlayPause(self) -> None:
         self.player.toggle()
-        self._update_playback()
+        self.update_playback()
+
+    @dbus.service.method("org.mpris.MediaPlayer2.Player")  # type: ignore
+    def Stop(self) -> None:
+        self.player.stop()
+        self.update_playback()
 
     @dbus.service.method("org.mpris.MediaPlayer2.Player")  # type: ignore
     def Next(self) -> None:
         self.player.next()
-        self._update_playback()
+        self.update_playback()
 
     @dbus.service.method("org.mpris.MediaPlayer2.Player")  # type: ignore
     def Previous(self) -> None:
         self.player.previous()
-        self._update_playback()
+        self.update_playback()
 
     @dbus.service.signal("org.freedesktop.DBus.Properties", signature="sa{sv}as")  # type: ignore
     def PropertiesChanged(
-        self, interface: str, changed: dict[str, object], invalidated: list[str]
+        self, interface: str, changed: Dict[str, object], invalidated: List[str]
     ) -> None:
         pass
 
-    def _update_playback(self) -> None:
+    def update_playback(self) -> None:
+        playing_status = (
+            "Playing"
+            if self.player.playing
+            else "Paused" if self.player.has_media else "Stopped"
+        )
+
         self.PropertiesChanged(
             "org.mpris.MediaPlayer2.Player",
-            {"PlaybackStatus": "Playing" if self.player.playing else "Paused"},
+            {
+                "PlaybackStatus": playing_status,
+                "Metadata": self.get_metadata(),  # type: ignore
+                "Position": dbus.Int64(0),  # type: ignore
+            },
             [],
         )
+
+    def get_metadata(self) -> dbus.Dictionary:  # type: ignore
+        return dbus.Dictionary(  # type: ignore
+            {
+                "xesam:title": self.current_metadata.get("title", "Unknown Title"),
+                "xesam:artist": dbus.Array(  # type: ignore
+                    [self.current_metadata.get("artist", "Unknown Artist")],
+                    signature="s",
+                ),
+            },
+            signature="sv",
+        )
+
+    def update_metadata(self, metadata: Dict[str, Any]) -> None:
+        self.current_metadata = metadata
+        self.update_playback()

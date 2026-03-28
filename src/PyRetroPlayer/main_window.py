@@ -292,15 +292,15 @@ class MainWindow(QMainWindow):
 
 
 def integrate_glib_loop() -> None:
-    context: GLib.MainContext = GLib.MainContext.default()
+    context: GLib.MainContext = GLib.MainContext.default()  # type: ignore
 
-    def iterate() -> None:
-        while context.pending():
-            context.iteration(False)
+    def iterate() -> None:  # type: ignore
+        while context.pending():  # type: ignore
+            context.iteration(False)  # type: ignore
 
 
 if __name__ == "__main__":
-    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)  # type: ignore
 
     app: QApplication = QApplication(sys.argv)
 
