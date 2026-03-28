@@ -301,6 +301,11 @@ class MainWindow(QMainWindow):
             if song:
                 self.save_song_as_audio(song)
 
+    def save_current_song_as_audio(self) -> None:
+        current_song = self.get_current_song()
+        if current_song:
+            self.save_song_as_audio(current_song)
+
     def save_song_as_audio(self, song: Song) -> None:
         output_dir = self.settings_manager.get("default_record_path", self.data_dir)
         os.makedirs(output_dir, exist_ok=True)
