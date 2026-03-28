@@ -329,12 +329,18 @@ class MainWindow(QMainWindow):
             self.recorder_player_thread_manager.start(current_backend)
 
 
-def integrate_glib_loop() -> None:
+def integrate_glib_loop() -> QTimer:
     context: GLib.MainContext = GLib.MainContext.default()  # type: ignore
 
     def iterate() -> None:  # type: ignore
         while context.pending():  # type: ignore
             context.iteration(False)  # type: ignore
+
+    timer: QTimer = QTimer()
+    timer.timeout.connect(iterate)
+    timer.start(50)
+
+    return timer
 
 
 if __name__ == "__main__":
@@ -342,13 +348,10 @@ if __name__ == "__main__":
 
     app: QApplication = QApplication(sys.argv)
 
-    integrate_glib_loop()
+    glib_timer = integrate_glib_loop()
 
     window: MainWindow = MainWindow()
     window.resize(800, 600)
     window.show()
-    sys.exit(app.exec())
 
-    timer: QTimer = QTimer()
-    timer.timeout.connect(iterate)
-    timer.start(50)
+    sys.exit(app.exec())
