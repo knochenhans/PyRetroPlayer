@@ -21,6 +21,7 @@ from PyRetroPlayer.loaders.modarchive_random_module_fetcher import (
 )
 from PyRetroPlayer.main_window import MainWindow
 from PyRetroPlayer.playing_modes import ModArchiveSource, PlayingMode, PlayingSource
+from PyRetroPlayer.playlist.loader_events import LoaderEvents
 from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.web_helper import WebHelper
@@ -59,16 +60,24 @@ class FileManager:
         if self.total_files > 1:
             self.main_window.ui_manager.update_loading_progress_bar(0, self.total_files)
 
-        loader_instance = self.loaders[0](
+        self.loader_events = LoaderEvents()
+
+        self.file_loader = self.loaders[0](
             player_backends=self.main_window.player_backends,
             player_backends_priority=self.main_window.player_backends_priorities,
+            events=self.loader_events,
         )
-        self.file_loader = loader_instance
+
+        self.loader_events.song_loaded.connect(self.on_song_loaded)
+        self.loader_events.all_songs_loaded.connect(self.on_all_songs_loaded)
+        # self.loader_events.song_info_retrieved.connect(self.on_song_info_retrieved)
+        # self.loader_events.song_finished.connect(self.on_song_finished)
 
         if self.file_loader:
             self.file_loader.set_file_list(file_list)
-            self.file_loader.set_song_loaded_callback(self.on_song_loaded)
-            self.file_loader.set_all_songs_loaded_callback(self.on_all_songs_loaded)
+            # self.loader_events.song_info_retrieved.connect(self.on_song_info_retrieved)
+            # self.loader_events.song_finished.connect(self.on_song_finished)
+            # self.file_loader.set_all_songs_loaded_callback(self.on_all_songs_loaded)
             self.file_loader.start_loading()
 
     def on_song_loaded(self, song: Optional[Song]) -> None:
@@ -83,14 +92,14 @@ class FileManager:
             self.main_window.scan_entries([entry])
 
         self.files_remaining -= 1
-        #BUG: fix
+        # BUG: fix
         # self.main_window.ui_manager.update_loading_progress_bar(
         #     self.total_files - self.files_remaining, self.total_files
         # )
         logger.info(f"Loaded song: {song.title} by {song.artist}")
 
     def on_all_songs_loaded(self) -> None:
-        #BUG: fix
+        # BUG: fix
         # self.main_window.ui_manager.update_loading_progress_bar(
         #     self.total_files, self.total_files
         # )
