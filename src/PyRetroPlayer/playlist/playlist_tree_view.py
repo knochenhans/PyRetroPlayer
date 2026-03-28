@@ -111,7 +111,6 @@ class PlaylistTreeView(QTreeView):
         self.set_column_widths(self.column_manager.get_column_widths())
 
         playlist.song_added = self.on_entry_added
-        playlist.song_removed = self.on_entry_removed
         playlist.song_playing = self.set_currently_playing_entry
 
     def keyPressEvent(self, event: QKeyEvent):
@@ -364,24 +363,6 @@ class PlaylistTreeView(QTreeView):
             logger.info(f"Song added to playlist view: {song.title} by {song.artist}")
         else:
             logger.warning(f"Song ID {entry.song_id} not found in library; cannot add.")
-
-    def on_entry_removed(self, entry: PlaylistEntry) -> None:
-        song = self.song_library.get_song(entry.song_id)
-        if song:
-            try:
-                row = self.playlist.get_song_ids().index(song.id)
-                self.remove_row(row)
-                logger.info(
-                    f"Song removed from playlist view: {song.title} by {song.artist}"
-                )
-            except ValueError:
-                logger.warning(
-                    f"Song ID {entry.song_id} not found in playlist; cannot remove row."
-                )
-        else:
-            logger.warning(
-                f"Song ID {entry.song_id} not found in library; cannot remove."
-            )
 
     def select_current_song(self, index: int) -> None:
         if 0 <= index < self.source_model.rowCount():
