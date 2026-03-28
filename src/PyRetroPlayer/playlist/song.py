@@ -41,6 +41,15 @@ class Song:
     def to_json(self) -> str:
         return json.dumps(self, default=lambda o: o.__dict__, indent=4)
 
+    def __str__(self) -> str:
+        return f"Song(id={self.id}, title={self.title}, artist={self.artist})"
+
+    def get_safe_filename(self) -> str:
+        title = self.title if self.title else self.file_path.split("/")[-1]
+
+        base_name = f"{self.artist} - {title}" if self.artist else title
+        return "".join(c for c in base_name if c.isalnum() or c in " ._-").rstrip()
+
     @classmethod
     def from_json(cls, json_str: str) -> "Song":
         data: Dict[str, Any] = json.loads(json_str)

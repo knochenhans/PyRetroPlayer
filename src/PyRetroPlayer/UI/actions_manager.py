@@ -85,7 +85,14 @@ class ActionsManager:
             "Rescan Songs",
             "Rescan the current songs and update metadata",
             lambda main_window: main_window.scan_selected_entries,
-        )
+        ),
+        (
+            "save_selected_entries_as_audio",
+            "media-record",
+            "Save Selected Entries as Audio",
+            "Save the selected entries as audio files",
+            lambda main_window: main_window.save_selected_entries_as_audio,
+        ),
     ]
 
     @staticmethod

@@ -25,6 +25,9 @@ from PyRetroPlayer.player_backends.libopenmpt.player_backend_libopenmpt import (
 from PyRetroPlayer.player_backends.libuade.player_backend_libuade import (
     PlayerBackendLibUADE,
 )
+from PyRetroPlayer.player_thread.recorder_player_thread_manager import (
+    RecorderPlayerThreadManager,
+)
 from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.playlist_entry import PlaylistEntry
 from PyRetroPlayer.playlist.song import Song
@@ -251,16 +254,15 @@ class MainWindow(QMainWindow):
             dialog = SongInfoDialog(current_song, self.ui_manager.font_manager, self)
             dialog.exec()
 
-    def scan_selected_entries(self) -> None:
+    def get_selected_entries(self) -> List[PlaylistEntry]:
         current_tree_view = self.playlist_ui_manager.get_current_tree_view()
         if current_tree_view is None:
-            return None
+            return []
 
-        selected_entries = current_tree_view.get_selected_entries()
-        if not selected_entries:
-            return
+        return current_tree_view.get_selected_entries()
 
-        self.scan_entries(selected_entries)
+    def scan_selected_entries(self) -> None:
+        self.scan_entries(self.get_selected_entries())
 
     def scan_entries(self, entries: List[PlaylistEntry]) -> None:
         from PyRetroPlayer.scan_entries_worker import ScanEntriesWorker
@@ -289,6 +291,37 @@ class MainWindow(QMainWindow):
 
         current_tree_view.update_entry(entry)
         self.ui_manager.update_loading_progress_bar(current, total)
+
+    def save_selected_entries_as_audio(self) -> None:
+        selected_entries = self.get_selected_entries()
+        song_ids = [entry.song_id for entry in selected_entries if entry.song_id != ""]
+
+        for song_id in song_ids:
+            song = self.song_library.get_song_by_id(song_id)
+            if song:
+                self.save_song_as_audio(song)
+
+    def save_song_as_audio(self, song: Song) -> None:
+        output_dir = self.settings_manager.get("default_record_path", self.data_dir)
+        os.makedirs(output_dir, exist_ok=True)
+        self.recorder_player_thread_manager = RecorderPlayerThreadManager(
+            settings_manager=self.settings_manager,
+            filename=os.path.join(output_dir, song.get_safe_filename() + ".wav"),
+        )
+
+        backend_name = song.available_backends[0]
+        backend_factory = self.player_backends.get(backend_name)
+
+        current_backend = None
+
+        if backend_factory:
+            current_backend = backend_factory()
+
+        if current_backend:
+            current_backend.load_song(song)
+
+        if current_backend:
+            self.recorder_player_thread_manager.start(current_backend)
 
 
 def integrate_glib_loop() -> None:

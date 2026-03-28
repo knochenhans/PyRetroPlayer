@@ -71,7 +71,7 @@ class Playlist:
         songs: List[PlaylistEntry] = []
         to_remove: List[str] = []
         for entry in self.entries:
-            song = song_library.get_song(entry.song_id)
+            song = song_library.get_song_by_id(entry.song_id)
             if song is not None:
                 logger.info(f"Found song: {entry.song_id}")
                 songs.append(entry)

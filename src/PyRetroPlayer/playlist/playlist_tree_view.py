@@ -135,7 +135,7 @@ class PlaylistTreeView(QTreeView):
         self.item_double_clicked.emit(index.row())
 
     def build_row_data(self, entry: PlaylistEntry) -> Dict[str, str]:
-        song = self.song_library.get_song(entry.song_id)
+        song = self.song_library.get_song_by_id(entry.song_id)
 
         if not song:
             logger.error(f"Song with ID {entry.song_id} not found in library")
@@ -334,7 +334,7 @@ class PlaylistTreeView(QTreeView):
     def get_current_song(self) -> Optional[Song]:
         song_id = self.get_current_song_id()
         if song_id:
-            return self.song_library.get_song(song_id)
+            return self.song_library.get_song_by_id(song_id)
         return None
 
     def get_column_widths(self) -> List[int]:
@@ -356,7 +356,7 @@ class PlaylistTreeView(QTreeView):
                 column_index += 1
 
     def on_entry_added(self, entry: PlaylistEntry) -> None:
-        song = self.song_library.get_song(entry.song_id)
+        song = self.song_library.get_song_by_id(entry.song_id)
         if song:
             row_data = self.build_row_data(entry)
             self.add_row(row_data)

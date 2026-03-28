@@ -38,7 +38,7 @@ def sample_song() -> Song:
 def test_add_and_get_song(temp_db: str, sample_song: Song) -> None:
     lib = SongLibrary(temp_db)
     lib.add_song(sample_song)
-    fetched = lib.get_song(sample_song.id)
+    fetched = lib.get_song_by_id(sample_song.id)
     assert fetched is not None
     assert fetched.title == sample_song.title
     assert fetched.artist == sample_song.artist
@@ -59,7 +59,7 @@ def test_remove_song(temp_db: str, sample_song: Song) -> None:
     lib = SongLibrary(temp_db)
     lib.add_song(sample_song)
     lib.remove_song(sample_song.id)
-    assert lib.get_song(sample_song.id) is None
+    assert lib.get_song_by_id(sample_song.id) is None
     lib.close()
 
 
@@ -124,4 +124,4 @@ def test_clear_library(temp_db: str, sample_song: Song) -> None:
 def test_context_manager(temp_db: str, sample_song: Song) -> None:
     with SongLibrary(temp_db) as lib:
         lib.add_song(sample_song)
-        assert lib.get_song(sample_song.id) is not None
+        assert lib.get_song_by_id(sample_song.id) is not None

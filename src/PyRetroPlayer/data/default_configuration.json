@@ -1,5 +1,8 @@
 {
     "last_file_directory": "",
     "last_directory": "",
-    "max_silence_length": 10000
+    "max_silence_length": 10000,
+    "default_record_format": "mp3",
+    "mp3_bitrate": "320k",
+    "ogg_quality": "10"
 }

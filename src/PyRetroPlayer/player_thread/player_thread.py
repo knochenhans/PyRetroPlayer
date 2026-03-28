@@ -1,4 +1,3 @@
-import threading
 import time
 
 from loguru import logger
@@ -7,9 +6,10 @@ from SettingsManager import SettingsManager
 from PyRetroPlayer.audio_backends.audio_backend import AudioBackend
 from PyRetroPlayer.player_backends.player_backend import PlayerBackend
 from PyRetroPlayer.player_events import PlayerEvents
+from PyRetroPlayer.player_thread.base_player_thread import BasePlayerThread
 
 
-class PlayerThread(threading.Thread):
+class PlayerThread(BasePlayerThread):
     def __init__(
         self,
         player_backend: PlayerBackend,
@@ -17,20 +17,9 @@ class PlayerThread(threading.Thread):
         settings_manager: SettingsManager,
         events: PlayerEvents,
     ) -> None:
-        super().__init__(daemon=True)  # daemon=True so it won’t block program exit
-        self.player_backend = player_backend
+        super().__init__(player_backend, settings_manager, events)
+
         self.audio_backend = audio_backend
-        self.settings_manager = settings_manager
-        self.events = events
-
-        self.stop_flag: threading.Event = threading.Event()
-        self.pause_flag: threading.Event = threading.Event()
-
-        self.max_silence_length_ms = self.settings_manager.get(
-            "max_silence_length", 10000
-        )
-
-        logger.debug("PlayerThread initialized")
 
     def run(self) -> None:
         self.player_backend.prepare_playing()
@@ -82,10 +71,6 @@ class PlayerThread(threading.Thread):
 
         self.player_backend.free_module()
         logger.debug("Playback stopped")
-
-    def stop(self) -> None:
-        logger.debug("Stop signal received")
-        self.stop_flag.set()
 
     def pause(self) -> None:
         if self.pause_flag.is_set():

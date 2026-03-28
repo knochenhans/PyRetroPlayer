@@ -122,7 +122,7 @@ class SongLibrary:
             cur.execute("DELETE FROM songs WHERE id = ?", (song_id,))
             logger.info(f"Removed song with ID from library: {song_id}")
 
-    def get_song(self, song_id: str) -> Optional[Song]:
+    def get_song_by_id(self, song_id: str) -> Optional[Song]:
         with self._lock:
             with self.conn as conn:
                 cur = conn.cursor()

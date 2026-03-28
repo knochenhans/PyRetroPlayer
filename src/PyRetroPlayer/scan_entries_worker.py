@@ -29,7 +29,7 @@ class ScanEntriesWorker(QObject):
     def run(self):
         total = len(self.entries)
         for i, entry in enumerate(self.entries):
-            song = self.song_library.get_song(entry.song_id)
+            song = self.song_library.get_song_by_id(entry.song_id)
             if song is None:
                 self.entry_updated.emit(entry, i + 1, total)
                 continue

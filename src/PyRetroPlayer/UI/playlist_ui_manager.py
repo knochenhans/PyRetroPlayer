@@ -181,6 +181,7 @@ class PlaylistUIManager:
                 "lookup_msm",
                 "lookup_modarchive",
                 "download_favorites",
+                "save_selected_entries_as_audio",
             ],
         )
         for i in range(self.tab_widget.count()):

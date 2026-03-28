@@ -6,7 +6,7 @@ from SettingsManager import SettingsManager
 
 from PyRetroPlayer.main_window import MainWindow
 from PyRetroPlayer.mpris.mpris_controller import MPRISPlayer
-from PyRetroPlayer.player_thread_manager import PlayerThreadManager
+from PyRetroPlayer.player_thread.player_thread_manager import PlayerThreadManager
 from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.queue_manager import QueueManager
@@ -76,7 +76,7 @@ class PlayerControlManager:
                         )
                         return
 
-                song = self.main_window.song_library.get_song(
+                song = self.main_window.song_library.get_song_by_id(
                     next_entry.song_id if next_entry else ""
                 )
 
