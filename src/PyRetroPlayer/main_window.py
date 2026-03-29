@@ -60,7 +60,9 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle(f"{self.application_name} v{self.application_version}")
 
-        self.song_library = SongLibrary(os.path.join(self.data_dir, "song_library.db"))
+        self.song_library = SongLibrary(
+            os.path.join(self.data_dir, "song_library.db"), self.settings_manager
+        )
 
         self.player_backends: Dict[str, Any] = {
             "LibUADE": lambda: PlayerBackendLibUADE(),

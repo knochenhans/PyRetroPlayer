@@ -11,6 +11,13 @@ class GeneralSettingsTab(SettingsTab):
 
         self.settings_layouts: List[SettingLayout] = [
             SettingLayout(
+                category="General",
+                key="dont_add_duplicates",
+                setting_type=SettingType.CHECKBOX,
+                label="Don't Add Duplicates to Library:",
+                action=lambda: self.update_checkbox_setting("dont_add_duplicates"),
+            ),
+            SettingLayout(
                 category="ModArchive",
                 key="modarchive_member_id",
                 setting_type=SettingType.EDIT_TEXT_NUMERIC,
@@ -70,6 +77,7 @@ class GeneralSettingsTab(SettingsTab):
             [str(i) for i in range(0, 11)],
         )
 
+        self.load_checkbox_setting("dont_add_duplicates", False)
         self.load_line_edit_setting("modarchive_member_id", "", numeric=True)
         self.load_line_edit_setting("default_record_path", "")
         self.load_combobox_setting("default_record_format", "ogg")

@@ -5,17 +5,19 @@ import threading
 from types import TracebackType
 from typing import List, Optional
 
+from SettingsManager import SettingsManager
 from loguru import logger
 
 from PyRetroPlayer.playlist.song import Song
 
 
 class SongLibrary:
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, settings_manager: SettingsManager):
+        self.settings_manager = settings_manager
+
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self._lock = threading.Lock()
-
         with self.conn as conn:
             conn.execute(
                 """
@@ -59,6 +61,8 @@ class SongLibrary:
                     logger.info(
                         f"Song already exists: {song.file_path} (ID: {row['id']}). Not adding duplicate."
                     )
+                    if self.settings_manager.get("dont_add_duplicates", default=False):
+                        return ""
                     return row["id"]
                 try:
                     cur.execute(
@@ -95,7 +99,10 @@ class SongLibrary:
                             logger.info(
                                 f"Song already exists (MD5/SHA1): {song.file_path} (ID: {row['id']}). Not adding duplicate."
                             )
-                            return row["id"]
+                            if self.settings_manager.get(
+                                "dont_add_duplicates", default=False
+                            ):
+                                return ""
                         cur.execute(
                             "SELECT id FROM songs WHERE file_path = ?",
                             (song.file_path,),
@@ -105,6 +112,10 @@ class SongLibrary:
                             logger.info(
                                 f"Song already exists (file_path): {song.file_path} (ID: {row['id']}). Not adding duplicate."
                             )
+                            if self.settings_manager.get(
+                                "dont_add_duplicates", default=False
+                            ):
+                                return ""
                             return row["id"]
                         logger.warning(
                             f"Song not added due to integrity error: {e} (MD5: {song.md5}, SHA1: {song.sha1})"
