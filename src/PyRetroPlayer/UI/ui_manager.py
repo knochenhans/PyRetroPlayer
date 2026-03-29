@@ -1,7 +1,4 @@
-from typing import Callable
-
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QLabel,
     QMenu,
@@ -14,6 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from PyRetroPlayer.main_window import MainWindow
+from PyRetroPlayer.UI.actions_manager import ActionsManager
 from PyRetroPlayer.UI.font_manager import FontManager
 
 
@@ -52,12 +50,8 @@ class UIManager:
     def add_widget(self, widget: QWidget) -> None:
         self.content_layout.addWidget(widget)
 
-    def add_menu_action(
-        self, menu: QMenu | QMenuBar, name: str, callback: Callable[[], None]
-    ) -> None:
-        action: QAction = QAction(name, self.main_window)
-        action.triggered.connect(callback)
-        menu.addAction(action)
+    def add_menu_qaction(self, menu: QMenu | QMenuBar, action_id: str) -> None:
+        menu.addAction(ActionsManager.get_action_by_name(self.main_window, action_id))
 
     def create_menu_bar(self) -> QMenuBar:
         menu_bar: QMenuBar = self.main_window.menuBar()
@@ -68,56 +62,27 @@ class UIManager:
     def create_file_menu(self, menu_bar: QMenuBar) -> None:
         file_menu = menu_bar.addMenu("&File")
 
-        self.add_menu_action(
-            file_menu, "Add &Files...", self.main_window.file_manager.add_files
-        )
-        self.add_menu_action(
-            file_menu, "Add &Folder...", self.main_window.file_manager.add_folder
-        )
+        self.add_menu_qaction(file_menu, "add_files")
+        self.add_menu_qaction(file_menu, "add_folder")
 
         file_menu.addSeparator()
 
-        self.add_menu_action(
-            file_menu,
-            "&New Playlist",
-            self.main_window.playlist_ui_manager.create_new_playlist,
-        )
-        self.add_menu_action(
-            file_menu,
-            "&Import Playlist",
-            self.main_window.playlist_ui_manager.import_playlist,
-        )
-        self.add_menu_action(
-            file_menu,
-            "&Export Playlist",
-            self.main_window.playlist_ui_manager.export_playlist,
-        )
-        self.add_menu_action(
-            file_menu,
-            "&Delete Playlist",
-            self.main_window.playlist_ui_manager.on_delete_playlist,
-        )
+        self.add_menu_qaction(file_menu, "new_playlist")
+        self.add_menu_qaction(file_menu, "import_playlist")
+        self.add_menu_qaction(file_menu, "export_playlist")
+        self.add_menu_qaction(file_menu, "delete_playlist")
 
         file_menu.addSeparator()
 
-        self.add_menu_action(file_menu, "E&xit", self.main_window.close)  # type: ignore
+        self.add_menu_qaction(file_menu, "open_settings_dialog")
+        self.add_menu_qaction(file_menu, "exit")
 
     def create_library_menu(self, menu_bar: QMenuBar) -> None:
         library_menu = menu_bar.addMenu("&Library")
 
-        self.add_menu_action(
-            library_menu,
-            "&Load All Songs",
-            self.main_window.load_all_songs_from_library,
-        )
-
-        self.add_menu_action(
-            library_menu, "&Remove Missing Files", self.main_window.remove_missing_files
-        )
-
-        self.add_menu_action(
-            library_menu, "&Clear Song Library", self.main_window.clear_song_library
-        )
+        self.add_menu_qaction(library_menu, "load_all_songs")
+        self.add_menu_qaction(library_menu, "remove_missing_files")
+        self.add_menu_qaction(library_menu, "clear_song_library")
 
     def update_song_progress_bar(self, current_position: int, song_length: int) -> None:
         if song_length > 0:
@@ -132,7 +97,7 @@ class UIManager:
 
         self.loading_progress_bar.setValue(current_value)
         self.loading_progress_bar.setMaximum(total_value)
-        
+
         if current_value >= total_value:
             self.loading_progress_bar.setVisible(False)
 

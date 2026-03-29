@@ -93,6 +93,83 @@ class ActionsManager:
             "Save the selected entries as audio files",
             lambda main_window: main_window.save_selected_entries_as_audio,
         ),
+        (
+            "open_settings_dialog",
+            "settings",
+            "Settings",
+            "Open the settings dialog",
+            lambda main_window: main_window.open_settings_dialog,
+        ),
+        (
+            "add_files",
+            "document-open",
+            "Add &Files...",
+            "Add files to the playlist",
+            lambda main_window: main_window.file_manager.add_files,
+        ),
+        (
+            "add_folder",
+            "folder-open",
+            "Add &Folder...",
+            "Add a folder to the playlist",
+            lambda main_window: main_window.file_manager.add_folder,
+        ),
+        (
+            "new_playlist",
+            "document-new",
+            "&New Playlist",
+            "Create a new playlist",
+            lambda main_window: main_window.playlist_ui_manager.create_new_playlist,
+        ),
+        (
+            "import_playlist",
+            "document-open",
+            "&Import Playlist",
+            "Import a playlist",
+            lambda main_window: main_window.playlist_ui_manager.import_playlist,
+        ),
+        (
+            "export_playlist",
+            "document-save",
+            "&Export Playlist",
+            "Export the current playlist",
+            lambda main_window: main_window.playlist_ui_manager.export_playlist,
+        ),
+        (
+            "delete_playlist",
+            "edit-delete",
+            "&Delete Playlist",
+            "Delete selected playlist",
+            lambda main_window: main_window.playlist_ui_manager.on_delete_playlist,
+        ),
+        (
+            "exit",
+            "application-exit",
+            "E&xit",
+            "Exit the application",
+            lambda main_window: main_window.close,  # type: ignore
+        ),
+        (
+            "load_all_songs",
+            "document-open",
+            "&Load All Songs",
+            "Load all songs from the library",
+            lambda main_window: main_window.load_all_songs_from_library,
+        ),
+        (
+            "remove_missing_files",
+            "edit-delete",
+            "&Remove Missing Files",
+            "Remove missing files from the library",
+            lambda main_window: main_window.remove_missing_files,
+        ),
+        (
+            "clear_song_library",
+            "edit-clear",
+            "&Clear Song Library",
+            "Clear the entire song library",
+            lambda main_window: main_window.clear_song_library,
+        ),
     ]
 
     @staticmethod
@@ -118,17 +195,24 @@ class ActionsManager:
         main_window: MainWindow, action_names: List[str]
     ) -> List[QAction]:
         actions: List[QAction] = []
+        for action_name in action_names:
+            action = ActionsManager.get_action_by_name(main_window, action_name)
+            actions.append(action)
+        return actions
+
+    @staticmethod
+    def get_action_by_name(main_window: MainWindow, action_name: str) -> QAction:
         for (
-            action_name,
+            action_name_data,
             icon_name,
             action_text,
             status_tip,
             slot_method_factory,
         ) in ActionsManager.actions_data:
-            if action_name in action_names:
+            if action_name_data == action_name:
                 icon = QIcon.fromTheme(icon_name)
-                action = QAction(icon, action_text)
+                action = QAction(icon, action_text, main_window)
                 action.setStatusTip(status_tip)
                 action.triggered.connect(slot_method_factory(main_window))
-                actions.append(action)
-        return actions
+                return action
+        raise ValueError(f"Action with name '{action_name}' not found")
