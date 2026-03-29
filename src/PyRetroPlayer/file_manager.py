@@ -73,7 +73,7 @@ class FileManager:
         )
 
         self.loader_events.song_loaded.connect(self.on_song_loaded)
-        self.loader_events.all_songs_loaded.connect(self.on_all_songs_loaded)
+        # self.loader_events.all_songs_loaded.connect(self.on_all_songs_loaded)
         # self.loader_events.song_info_retrieved.connect(self.on_song_info_retrieved)
         # self.loader_events.song_finished.connect(self.on_song_finished)
 
@@ -85,32 +85,33 @@ class FileManager:
             self.file_loader.start_loading()
 
     def on_song_loaded(self, song: Optional[Song]) -> None:
+        self.files_remaining -= 1
+        self.main_window.ui_manager.update_loading_progress_bar(
+            self.total_files - self.files_remaining, self.total_files
+        )
+
         if song is None:
             logger.error("Failed to load song.")
             return
 
         id = self.main_window.song_library.add_song(song)
-        playlist = self.get_current_playlist()
-        if playlist:
-            entry = playlist.add_song(id)
-            self.main_window.scan_entries([entry])
 
-        self.files_remaining -= 1
-        # BUG: fix
-        # self.main_window.ui_manager.update_loading_progress_bar(
-        #     self.total_files - self.files_remaining, self.total_files
-        # )
+        if id != "":
+            playlist = self.get_current_playlist()
+            if playlist:
+                entry = playlist.add_song(id)
+                self.main_window.scan_entries([entry])
+
         logger.info(f"Loaded song: {song.title} by {song.artist}")
 
-    def on_all_songs_loaded(self) -> None:
-        # BUG: fix
-        # self.main_window.ui_manager.update_loading_progress_bar(
-        #     self.total_files, self.total_files
-        # )
-        logger.info("All songs have been loaded.")
-        if self.file_loader:
-            self.file_loader.cleanup()
-            self.file_loader = None
+    # def on_all_songs_loaded(self) -> None:
+    #     self.main_window.ui_manager.update_loading_progress_bar(
+    #         self.total_files, self.total_files
+    #     )
+    #     logger.info("All songs have been loaded.")
+    #     if self.file_loader:
+    #         self.file_loader.cleanup()
+    #         self.file_loader = None
 
     def load_all_songs_from_library(self) -> None:
         songs = self.main_window.song_library.get_all_songs()

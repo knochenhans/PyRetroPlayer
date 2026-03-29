@@ -293,7 +293,7 @@ class MainWindow(QMainWindow):
             return
 
         current_tree_view.update_entry(entry)
-        self.ui_manager.update_loading_progress_bar(current, total)
+        # self.ui_manager.update_loading_progress_bar(current, total)
 
     def save_selected_entries_as_audio(self) -> None:
         selected_entries = self.get_selected_entries()
