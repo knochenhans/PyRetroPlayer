@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 from SettingsDialog import SettingsDialog
 from SettingsManager import SettingsManager
 
-from PyRetroPlayer.general_settings_tab import GeneralSettingsTab
+from PyRetroPlayer.settings.general_settings_tab import GeneralSettingsTab
 
 
 class CustomSettingsDialog(SettingsDialog):

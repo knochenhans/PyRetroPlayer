@@ -19,7 +19,6 @@ from PyRetroPlayer.audio_backends.audio_backend_wav import AudioBackendWav
 from PyRetroPlayer.audio_backends.pyaudio.audio_backend_pyuadio import (
     AudioBackendPyAudio,
 )
-from PyRetroPlayer.custom_settings_dialog import CustomSettingsDialog
 from PyRetroPlayer.player_backends.libopenmpt.player_backend_libopenmpt import (
     PlayerBackendLibOpenMPT,
 )
@@ -36,6 +35,7 @@ from PyRetroPlayer.playlist.song_info_dialog import SongInfoDialog
 from PyRetroPlayer.playlist.song_library import SongLibrary
 from PyRetroPlayer.scraping.modarchive_scraper import ModArchiveScraper
 from PyRetroPlayer.scraping.msm_scraper import MSMScraper
+from PyRetroPlayer.settings.custom_settings_dialog import CustomSettingsDialog
 from PyRetroPlayer.web_helper import WebHelper
 
 
