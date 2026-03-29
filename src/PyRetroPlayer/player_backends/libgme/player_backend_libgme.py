@@ -1,42 +1,51 @@
 import ctypes
+from typing import Optional
+
 from loguru import logger
 
-from player_backends.player_backend import PlayerBackend
-from player_backends.libgme.ctypes_functions import (
+from PyRetroPlayer.player_backends.libgme.ctypes_functions import (
     gme_info_t,
-    libgme,
-    gme_type_t,
-    gme_err_t,
     handle_error,
+    libgme,
 )
+from PyRetroPlayer.player_backends.libuade import songinfo
+from PyRetroPlayer.player_backends.player_backend import PlayerBackend
 
 
 class PlayerBackendLibGME(PlayerBackend):
     def __init__(self, name: str = "LibGME") -> None:
         super().__init__(name)
         self.emulator = ctypes.POINTER(ctypes.c_void_p)()
-        self.track_info = None
+        self.track_info: Optional[gme_info_t] = None
         self.sample_rate = 44100
 
         logger.debug("PlayerBackendLibGME initialized")
 
     def load_file(self) -> bool:
+        if not self.song or not self.song.file_path:
+            logger.error("No song or filename provided for loading")
+            return False
+
         result = libgme.gme_open_file(
-            ctypes.c_char_p(self.song.filename.encode()),
+            ctypes.c_char_p(self.song.file_path.encode()),
             ctypes.byref(self.emulator),
             self.sample_rate,
         )
 
         if result:
-            logger.error(f"Could not open file {self.song.filename}")
+            logger.error(f"Could not open file {self.song.file_path} with LibGME")
             return False
         return True
 
     def check_module(self) -> bool:
         file_type = ctypes.c_void_p()
 
+        if not self.song or not self.song.file_path:
+            logger.error("No song or filename provided for module check")
+            return False
+
         result = libgme.gme_identify_file(
-            ctypes.c_char_p(self.song.filename.encode()),
+            ctypes.c_char_p(self.song.file_path.encode()),
             ctypes.byref(file_type),
         )
         handle_error(result)
@@ -46,43 +55,52 @@ class PlayerBackendLibGME(PlayerBackend):
             return False
 
         if self.load_file():
-            logger.info(f"Successfully loaded file: {self.song.filename}")
+            logger.info(f"Successfully loaded file: {self.song.file_path}")
             return True
         return False
 
-    def prepare_playing(self, subsong: int = 0) -> None:
+    def prepare_playing(self, subsong_nr: int = 0) -> None:
         self.load_file()
         if not self.emulator:
             raise ValueError("Emulator instance is not initialized")
 
-        ret = libgme.gme_start_track(self.emulator, subsong)
+        ret = libgme.gme_start_track(self.emulator, subsong_nr)
 
         if ret:
-            logger.error(f"Failed to start track {subsong}")
+            logger.error(f"Failed to start track {subsong_nr}")
             raise RuntimeError("Failed to start track")
 
-        logger.info(f"Prepared subsong {subsong} for playback")
+        logger.info(f"Prepared subsong {subsong_nr} for playback")
 
     def retrieve_song_info(self) -> None:
         self.track_info = self._get_track_info(0)
+
+        if self.song is None:
+            raise ValueError("Song instance is not initialized")
+
         self.song.title = self.track_info.song.decode()
         self.song.duration = int(self.get_module_length())
-        self.song.formatname = self.track_info.system.decode()
+        self.song.custom_metadata = {
+            "formatname": self.track_info.system.decode(),
+        }
         self.song.artist = self.track_info.author.decode()
 
         logger.info(
             f"Song info retrieved: {self.song.title}, Duration: {self.song.duration} ms"
         )
 
-    def get_module_length(self) -> float:
+    def get_module_length(self) -> int:
         self.prepare_playing(0)
         self.track_info = self._get_track_info(0)
 
         if not self.track_info:
             raise ValueError("Track info is not initialized")
-        return (
+        value_ms = (
             self.track_info.play_length if self.track_info.play_length != -1 else 150000
-        ) / 1000.0  # Convert milliseconds to seconds
+        )
+        return (
+            int(value_ms) // 1000
+        )  # Convert milliseconds to seconds (integer seconds)
 
     def _get_track_info(self, track: int) -> gme_info_t:
         info_ptr = ctypes.POINTER(gme_info_t)()
@@ -119,7 +137,7 @@ class PlayerBackendLibGME(PlayerBackend):
     def free_module(self) -> None:
         if self.emulator:
             libgme.gme_delete(self.emulator)
-            self.emulator = None
+            self.emulator = ctypes.POINTER(ctypes.c_void_p)()
             logger.info("LibGME instance deleted")
 
     def seek(self, position: int) -> None:

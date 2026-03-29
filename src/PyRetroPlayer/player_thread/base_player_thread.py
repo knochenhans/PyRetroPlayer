@@ -5,7 +5,7 @@ from loguru import logger
 from SettingsManager import SettingsManager
 
 from PyRetroPlayer.player_backends.player_backend import PlayerBackend
-from PyRetroPlayer.player_events import PlayerEvents
+from PyRetroPlayer.playing.player_events import PlayerEvents
 
 
 class BasePlayerThread(threading.Thread):

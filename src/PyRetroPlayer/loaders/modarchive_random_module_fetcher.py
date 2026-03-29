@@ -3,7 +3,11 @@ from typing import Callable, Optional
 
 from loguru import logger
 
-from PyRetroPlayer.playing_modes import ModArchiveSource, PlayingMode, PlayingSource
+from PyRetroPlayer.playing.playing_modes import (
+    ModArchiveSource,
+    PlayingMode,
+    PlayingSource,
+)
 from PyRetroPlayer.playlist.song import Song
 from PyRetroPlayer.web_helper import WebHelper
 

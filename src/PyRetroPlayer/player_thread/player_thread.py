@@ -5,8 +5,8 @@ from SettingsManager import SettingsManager
 
 from PyRetroPlayer.audio_backends.audio_backend import AudioBackend
 from PyRetroPlayer.player_backends.player_backend import PlayerBackend
-from PyRetroPlayer.player_events import PlayerEvents
 from PyRetroPlayer.player_thread.base_player_thread import BasePlayerThread
+from PyRetroPlayer.playing.player_events import PlayerEvents
 
 
 class PlayerThread(BasePlayerThread):

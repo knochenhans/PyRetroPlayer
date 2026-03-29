@@ -80,7 +80,7 @@ class MainWindow(QMainWindow):
         self.audio_backend = self.audio_backends["PyAudio"]()
 
         from PyRetroPlayer.file_manager import FileManager
-        from PyRetroPlayer.player_control_manager import PlayerControlManager
+        from PyRetroPlayer.playing.player_control_manager import PlayerControlManager
         from PyRetroPlayer.UI.playlist_ui_manager import PlaylistUIManager
         from PyRetroPlayer.UI.ui_manager import UIManager
 

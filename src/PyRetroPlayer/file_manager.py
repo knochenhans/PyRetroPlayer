@@ -20,7 +20,11 @@ from PyRetroPlayer.loaders.modarchive_random_module_fetcher import (
     ModArchiveRandomModuleFetcherThread,
 )
 from PyRetroPlayer.main_window import MainWindow
-from PyRetroPlayer.playing_modes import ModArchiveSource, PlayingMode, PlayingSource
+from PyRetroPlayer.playing.playing_modes import (
+    ModArchiveSource,
+    PlayingMode,
+    PlayingSource,
+)
 from PyRetroPlayer.playlist.loader_events import LoaderEvents
 from PyRetroPlayer.playlist.playlist import Playlist
 from PyRetroPlayer.playlist.song import Song

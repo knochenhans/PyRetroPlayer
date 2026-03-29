@@ -3,8 +3,8 @@ from typing import Callable, Optional
 from SettingsManager import SettingsManager
 
 from PyRetroPlayer.player_backends.player_backend import PlayerBackend
-from PyRetroPlayer.player_events import PlayerEvents
 from PyRetroPlayer.player_thread.base_player_thread import BasePlayerThread
+from PyRetroPlayer.playing.player_events import PlayerEvents
 
 
 class BasePlayerThreadManager:
