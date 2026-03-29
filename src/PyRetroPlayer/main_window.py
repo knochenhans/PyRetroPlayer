@@ -19,6 +19,7 @@ from PyRetroPlayer.audio_backends.audio_backend_wav import AudioBackendWav
 from PyRetroPlayer.audio_backends.pyaudio.audio_backend_pyuadio import (
     AudioBackendPyAudio,
 )
+from PyRetroPlayer.custom_settings_dialog import CustomSettingsDialog
 from PyRetroPlayer.player_backends.libopenmpt.player_backend_libopenmpt import (
     PlayerBackendLibOpenMPT,
 )
@@ -327,6 +328,11 @@ class MainWindow(QMainWindow):
 
         if current_backend:
             self.recorder_player_thread_manager.start(current_backend)
+
+    def open_settings_dialog(self) -> None:
+        dialog = CustomSettingsDialog(self)
+        dialog.load_settings(self.settings_manager)
+        dialog.exec()
 
 
 def integrate_glib_loop() -> QTimer:
