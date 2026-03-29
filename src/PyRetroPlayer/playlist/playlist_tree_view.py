@@ -24,6 +24,7 @@ from SettingsManager import SettingsManager
 
 from PyRetroPlayer.playlist.column_filter_proxy import ColumnFilterProxy
 from PyRetroPlayer.playlist.column_manager import ColumnManager
+from PyRetroPlayer.playlist.custom_header import CustomHeader
 from PyRetroPlayer.playlist.custom_item_view_style import CustomItemViewStyle
 from PyRetroPlayer.playlist.drag_drop_reorder_proxy import (
     DragDropReorderProxy,
@@ -80,6 +81,10 @@ class PlaylistTreeView(QTreeView):
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self.doubleClicked.connect(self.on_item_double_clicked)
+
+        self.setHeader(
+            CustomHeader(self.default_columns_definitions, self.column_manager, self)
+        )
 
         self.source_model = PlaylistItemModel(0, len(self.default_columns_definitions))
 
