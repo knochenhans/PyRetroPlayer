@@ -10,6 +10,8 @@ from loguru import logger
 
 from PyRetroPlayer.playlist.song import Song
 
+_thread_local = threading.local()
+
 
 class SongLibrary:
     def __init__(self, db_path: str, settings_manager: SettingsManager):
@@ -51,9 +53,10 @@ class SongLibrary:
         logger.debug(f"Existing songs in library: {[song.title for song in all_songs]}")
 
     def get_connection(self):
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+        if not hasattr(_thread_local, "conn"):
+            _thread_local.conn = sqlite3.connect(self.db_path)
+            _thread_local.conn.row_factory = sqlite3.Row
+        return _thread_local.conn
 
     def add_song(self, song: Song) -> str:
         with self._lock:
