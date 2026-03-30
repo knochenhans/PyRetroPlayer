@@ -11,11 +11,18 @@ class GeneralSettingsTab(SettingsTab):
 
         self.settings_layouts: List[SettingLayout] = [
             SettingLayout(
-                category="General",
+                category="Song Library",
                 key="dont_add_duplicates",
                 setting_type=SettingType.CHECKBOX,
                 label="Don't Add Duplicates to Library:",
                 action=lambda: self.update_checkbox_setting("dont_add_duplicates"),
+            ),
+            SettingLayout(
+                category="Song Library",
+                key="auto_scan_on_load",
+                setting_type=SettingType.CHECKBOX,
+                label="Auto Scan on Load (using ModArchive):",
+                action=lambda: self.update_checkbox_setting("auto_scan_on_load"),
             ),
             SettingLayout(
                 category="ModArchive",
@@ -83,3 +90,4 @@ class GeneralSettingsTab(SettingsTab):
         self.load_combobox_setting("default_record_format", "ogg")
         self.load_combobox_setting("mp3_bitrate", "320k")
         self.load_combobox_setting("ogg_quality", "10")
+        self.load_checkbox_setting("auto_scan_on_load", False)

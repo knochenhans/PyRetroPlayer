@@ -100,7 +100,9 @@ class FileManager:
             playlist = self.get_current_playlist()
             if playlist:
                 entry = playlist.add_song(id)
-                self.main_window.scan_entries([entry])
+
+                if self.main_window.settings_manager.get("auto_scan_on_load", False):
+                    self.main_window.scan_entries([entry])
 
         logger.info(f"Loaded song: {song.title} by {song.artist}")
 
