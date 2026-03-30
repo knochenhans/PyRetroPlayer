@@ -38,7 +38,7 @@ class PlayerBackend:
             tuple(ext.lower() for ext in self.blacklisted_extensions)
         ):
             logger.warning(f"File extension of {self.song.file_path} is blacklisted.")
-        return False
+        return True
 
     def prepare_playing(self, subsong_nr: int = -1) -> None:
         pass

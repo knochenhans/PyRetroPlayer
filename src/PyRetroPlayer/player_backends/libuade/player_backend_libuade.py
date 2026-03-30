@@ -61,14 +61,14 @@ class PlayerBackendLibUADE(PlayerBackend):
             logger.error(error_message)
             return False
 
-        # TODO: Check why this is freed here but then used in uade_play_from_buffer
-        libc.free(ret)
-
-        ret = libuade.uade_play_from_buffer(
+        play_ret = libuade.uade_play_from_buffer(
             None, ret, self.module_size, -1, self.state_ptr
         )
 
-        if ret < 1:
+        # TODO: Check why this is freed here but then used in uade_play_from_buffer
+        libc.free(ret)
+
+        if play_ret < 1:
             logger.warning(f"LibUADE is unable to play {self.song.file_path}")
             return False
 
