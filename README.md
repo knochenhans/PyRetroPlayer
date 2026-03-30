@@ -18,7 +18,7 @@ Based on my older projects [Mod Archive Random Player](https://github.com/knoche
 - Progress slider to show the current playback position.
 - Tray icon to show/hide the main window, also provides play/pause/stop controls.
 - Multi-tab interface.
-- Uses SQLite for save mod informations.
+- Uses SQLite for saving mod informations in a song database.
 - Basic MPRIS support for media player controls via media keys or desktop environment media controls.
 
 ## How to use
