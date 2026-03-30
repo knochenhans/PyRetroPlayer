@@ -19,6 +19,7 @@ Based on my older projects [Mod Archive Random Player](https://github.com/knoche
 - Tray icon to show/hide the main window, also provides play/pause/stop controls.
 - Multi-tab interface.
 - Uses SQLite for save mod informations.
+- Basic MPRIS support for media player controls via media keys or desktop environment media controls.
 
 ## How to use
 
