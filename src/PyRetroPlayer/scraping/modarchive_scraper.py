@@ -9,14 +9,16 @@ from PyRetroPlayer.scraping.scraper import Scraper
 
 
 class ModArchiveScraper(Scraper):
-    def scrape(self, song: Song) -> None:
-        # Scrape page via bs4
-        url = self.get_url(song)
+    def scrape_by_song(self, song: Song) -> None:
+        url = self.get_url_by_song(song)
 
         if not url:
             logger.warning(f"No ModArchive URL found for song: {song.file_path}")
             return
 
+        self.scrape_by_url(url, song.md5, song.file_path)
+
+    def scrape_by_url(self, url: str, md5: Optional[str], file_path: str) -> None:
         parsed_url = urlparse(url)
         query_params = parse_qs(parsed_url.query)
         modarchive_id = query_params.get("query", [""])[0]
@@ -25,9 +27,7 @@ class ModArchiveScraper(Scraper):
             self.scraped_data["modarchive_id"] = modarchive_id
             self.scraped_data["last_scraped"] = "modarchive"
             self.scraped_data["last_scraped_date"] = self.get_current_date()
-            logger.info(
-                f"Found ModArchive ID: {modarchive_id} for song: {song.file_path}"
-            )
+            logger.info(f"Found ModArchive ID: {modarchive_id} for song: {file_path}")
 
         response = self.session.get(url)
         if response.status_code == 200:
@@ -35,7 +35,7 @@ class ModArchiveScraper(Scraper):
 
             mod_page_ratings = soup.find("div", class_="mod-page-ratings")
 
-            if mod_page_ratings and isinstance(mod_page_ratings, Tag):
+            if mod_page_ratings:
                 stats_li: List[Tag] = mod_page_ratings.find_all("li", class_="stats")
 
                 if len(stats_li) == 2:
@@ -51,7 +51,7 @@ class ModArchiveScraper(Scraper):
 
             mod_page_archive_info = soup.find("div", class_="mod-page-archive-info")
 
-            if mod_page_archive_info and isinstance(mod_page_archive_info, Tag):
+            if mod_page_archive_info:
                 artist_tag = mod_page_archive_info.find(
                     "a", class_="standard-link", href=True
                 )
@@ -74,14 +74,14 @@ class ModArchiveScraper(Scraper):
                                 key, value = text.split(":", 1)
                                 self.scraped_data[key.strip()] = value.strip()
 
-            if not song.md5 == self.scraped_data.get("MD5", ""):
+            if not md5 == self.scraped_data.get("MD5", ""):
                 logger.warning(
-                    f"MD5 mismatch for song: {song.file_path} (local: {song.md5}, modarchive: {self.scraped_data.get('MD5', '')}, skipping further scraping.)"
+                    f"MD5 mismatch for song: {file_path} (local: {md5}, modarchive: {self.scraped_data.get('MD5', '')}, skipping further scraping.)"
                 )
 
             mod_page_comments = soup.find("div", class_="mod-page-comments")
 
-            if mod_page_comments and isinstance(mod_page_comments, Tag):
+            if mod_page_comments:
                 comments_data: List[Dict[str, str]] = []
                 comments: List[Tag] = mod_page_comments.find_all(
                     "div", class_="comment-listing"
@@ -100,9 +100,11 @@ class ModArchiveScraper(Scraper):
 
         # self.apply_scraped_data_to_song(song)
 
-    def get_url(self, song: Song) -> str:
+    def get_url_by_song(self, song: Song) -> str:
         logger.info(f"Looking up ModArchive URL for song: {song.file_path}")
+        return self.get_url(song.title, song.file_path, song.md5)
 
+    def get_url(self, title: str, file_path: str, md5: Optional[str]) -> str:
         def search_modarchive(query: str, search_type: str) -> Optional[str]:
             url = f"https://modarchive.org/index.php?request=search&query={query}&submit=Find&search_type={search_type}"
             response = self.session.get(url)
@@ -110,21 +112,36 @@ class ModArchiveScraper(Scraper):
                 soup = BeautifulSoup(response.content, "html.parser")
                 # Check if there are search results
                 search_results_header = soup.find(
-                    "h1", class_="site-wide-page-head-title", string="Search Results"
+                    name="h1",
+                    class_="site-wide-page-head-title",
+                    string="Search Results",
                 )
                 if search_results_header:
                     result = soup.find("a", class_="standard-link", href=True)
-                    if result and isinstance(result, Tag):
+                    if result:
                         href = result["href"]
                         if isinstance(href, list):
                             href = href[0]
                         return "https://modarchive.org/" + href
             return None
 
-        filename = song.file_path.split("/")[-1]
+        filename = file_path.split("/")[-1]
         url = search_modarchive(filename, "filename")
         if not url:
-            if song.title and song.title != "<no songtitle>":
-                title_with_plus = song.title.replace(" ", "+")
+            if title and title != "<no songtitle>":
+                title_with_plus = title.replace(" ", "+")
                 url = search_modarchive(title_with_plus, "filename_or_songtitle")
+
+        if not url:
+            logger.warning(f"No ModArchive URL found for song: {file_path}")
+            return ""
+
+        self.scrape_by_url(url, md5, file_path)
+
+        if self.scraped_data.get("MD5", "") != md5:
+            logger.warning(
+                f"MD5 mismatch for song: {file_path} (local: {md5}, modarchive: {self.scraped_data.get('MD5', '')}), returning empty URL."
+            )
+            return ""
+
         return url if url else ""

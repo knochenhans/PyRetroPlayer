@@ -210,7 +210,7 @@ class MainWindow(QMainWindow):
         if current_song is None:
             return
 
-        url = self.modarchive_scraper.get_url(current_song)
+        url = self.modarchive_scraper.get_url_by_song(current_song)
 
         if url:
             webbrowser.open(url)

@@ -34,7 +34,7 @@ class ScanEntriesWorker(QObject):
                 self.entry_updated.emit(entry, i + 1, total)
                 continue
             self.file_manager.scan_song(song)
-            self.scraper.scrape(song)
+            self.scraper.scrape_by_song(song)
             self.scraper.apply_scraped_data_to_song(song)
             self.scraper.reset()
             self.song_library.update_song(song)

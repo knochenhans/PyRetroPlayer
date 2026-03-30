@@ -22,7 +22,7 @@ class Scraper:
 
         self.scraped_data: Dict[str, Any] = {}
 
-    def scrape(self, song: Song) -> None:
+    def scrape_by_song(self, song: Song) -> None:
         raise NotImplementedError("Subclasses must implement this method")
 
     def get_current_date(self) -> str:
@@ -45,7 +45,7 @@ class Scraper:
         # Extract headers if present
         headers: List[str] = []
         header_row = table.find("tr")
-        if header_row and isinstance(header_row, Tag):
+        if header_row:
             ths = header_row.find_all("th")
             if ths:
                 headers = [th.get_text(strip=True) for th in ths]

@@ -5,7 +5,7 @@ from PyRetroPlayer.scraping.scraper import Scraper
 
 
 class MSMScraper(Scraper):
-    def scrape(self, song: Song) -> None:
+    def scrape_by_song(self, song: Song) -> None:
         # Scrape page via bs4
         url = self.get_url(song)
         response = self.session.get(url)
