@@ -15,10 +15,11 @@ class SongLibrary:
     def __init__(self, db_path: str, settings_manager: SettingsManager):
         self.settings_manager = settings_manager
 
-        self.conn = sqlite3.connect(db_path, check_same_thread=False)
-        self.conn.row_factory = sqlite3.Row
+        self.db_path = db_path
         self._lock = threading.Lock()
-        with self.conn as conn:
+        self.db_path = db_path
+
+        with self.get_connection() as conn:
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS songs (
@@ -49,9 +50,14 @@ class SongLibrary:
         all_songs = self.get_all_songs()
         logger.debug(f"Existing songs in library: {[song.title for song in all_songs]}")
 
+    def get_connection(self):
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
     def add_song(self, song: Song) -> str:
         with self._lock:
-            with self.conn as conn:
+            with self.get_connection() as conn:
                 cur = conn.cursor()
                 cur.execute(
                     "SELECT id FROM songs WHERE file_path = ?", (song.file_path,)
@@ -128,14 +134,14 @@ class SongLibrary:
                         return ""
 
     def remove_song(self, song_id: str) -> None:
-        with self.conn as conn:
+        with self.get_connection() as conn:
             cur = conn.cursor()
             cur.execute("DELETE FROM songs WHERE id = ?", (song_id,))
             logger.info(f"Removed song with ID from library: {song_id}")
 
     def get_song_by_id(self, song_id: str) -> Optional[Song]:
         with self._lock:
-            with self.conn as conn:
+            with self.get_connection() as conn:
                 cur = conn.cursor()
                 cur.execute("SELECT * FROM songs WHERE id = ?", (song_id,))
                 row = cur.fetchone()
@@ -166,7 +172,7 @@ class SongLibrary:
             return []
         placeholders = ",".join("?" for _ in song_ids)
         query = f"SELECT * FROM songs WHERE id IN ({placeholders})"
-        with self.conn as conn:
+        with self.get_connection() as conn:
             cur = conn.cursor()
             cur.execute(query, song_ids)
             rows = cur.fetchall()
@@ -195,7 +201,7 @@ class SongLibrary:
             return [song_map[sid] for sid in song_ids if sid in song_map]
 
     def get_all_songs(self) -> List[Song]:
-        with self.conn as conn:
+        with self.get_connection() as conn:
             cur = conn.cursor()
             cur.execute("SELECT * FROM songs")
             return [
@@ -222,13 +228,13 @@ class SongLibrary:
             ]
 
     def check_song_exists(self, song_id: str) -> bool:
-        with self.conn as conn:
+        with self.get_connection() as conn:
             cur = conn.cursor()
             cur.execute("SELECT 1 FROM songs WHERE id = ?", (song_id,))
             return cur.fetchone() is not None
 
     def remove_missing_files(self) -> None:
-        with self.conn as conn:
+        with self.get_connection() as conn:
             cur = conn.cursor()
             cur.execute("SELECT id, file_path FROM songs")
             rows = cur.fetchall()
@@ -239,7 +245,7 @@ class SongLibrary:
                     self.remove_song(song_id)
 
     def update_song(self, song: Song) -> None:
-        with self.conn as conn:
+        with self.get_connection() as conn:
             cur = conn.cursor()
             cur.execute(
                 """
@@ -262,13 +268,13 @@ class SongLibrary:
             logger.info(f"Updated song in library: {song.title} (ID: {song.id})")
 
     def clear(self) -> None:
-        with self.conn as conn:
+        with self.get_connection() as conn:
             cur = conn.cursor()
             cur.execute("DELETE FROM songs")
             logger.debug("Cleared song library")
 
     def close(self) -> None:
-        self.conn.close()
+        pass
 
     def __enter__(self) -> "SongLibrary":
         return self
