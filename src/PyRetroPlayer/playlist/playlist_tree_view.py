@@ -82,15 +82,15 @@ class PlaylistTreeView(QTreeView):
 
         self.doubleClicked.connect(self.on_item_double_clicked)
 
-        self.setHeader(
-            CustomHeader(self.default_columns_definitions, self.column_manager, self)
-        )
-
         self.source_model = PlaylistItemModel(0, len(self.default_columns_definitions))
 
         column_names = [
             col_def.get("name", "") for col_def in self.default_columns_definitions
         ]
+
+        self.setHeader(
+            CustomHeader(self.default_columns_definitions, self.column_manager, self)
+        )
 
         self.source_model.set_column_names(column_names)
 
