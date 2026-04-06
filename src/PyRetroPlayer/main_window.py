@@ -194,9 +194,6 @@ class MainWindow(QMainWindow):
     def on_song_loaded(self, song: Optional[Song]) -> None:
         self.file_manager.on_song_loaded(song)
 
-    def on_all_songs_loaded(self) -> None:
-        self.file_manager.on_all_songs_loaded()
-
     def get_current_song(self) -> Optional[Song]:
         current_tree_view = self.playlist_ui_manager.get_current_tree_view()
         if current_tree_view is None:

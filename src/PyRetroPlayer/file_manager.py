@@ -73,15 +73,9 @@ class FileManager:
         )
 
         self.loader_events.song_loaded.connect(self.on_song_loaded)
-        # self.loader_events.all_songs_loaded.connect(self.on_all_songs_loaded)
-        # self.loader_events.song_info_retrieved.connect(self.on_song_info_retrieved)
-        # self.loader_events.song_finished.connect(self.on_song_finished)
 
         if self.file_loader:
             self.file_loader.set_file_list(file_list)
-            # self.loader_events.song_info_retrieved.connect(self.on_song_info_retrieved)
-            # self.loader_events.song_finished.connect(self.on_song_finished)
-            # self.file_loader.set_all_songs_loaded_callback(self.on_all_songs_loaded)
             self.file_loader.start_loading()
 
     def on_song_loaded(self, song: Optional[Song]) -> None:
