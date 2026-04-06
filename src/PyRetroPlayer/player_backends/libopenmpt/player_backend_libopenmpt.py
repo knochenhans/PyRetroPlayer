@@ -64,7 +64,8 @@ class PlayerBackendLibOpenMPT(PlayerBackend):
         error = ctypes.c_int()
         error_message = ctypes.c_char_p()
 
-        self.module_data = open(self.song.file_path, "rb").read()
+        with open(self.song.file_path, "rb") as f:
+            self.module_data = f.read()
         self.module_size = len(self.module_data)
 
         # Check if this extention is supported
@@ -123,7 +124,8 @@ class PlayerBackendLibOpenMPT(PlayerBackend):
         error = ctypes.c_int()
         error_message = ctypes.c_char_p()
 
-        self.module_data = open(self.song.file_path, "rb").read()
+        with open(self.song.file_path, "rb") as f:
+            self.module_data = f.read()
         self.module_size = len(self.module_data)
 
         self.mod = self.load_mod(  # type: ignore
