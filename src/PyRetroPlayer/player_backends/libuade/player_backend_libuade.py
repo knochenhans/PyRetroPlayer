@@ -1,4 +1,5 @@
 import ctypes
+import threading
 
 from loguru import logger
 
@@ -21,11 +22,13 @@ from PyRetroPlayer.player_backends.libuade.ctypes_classes import (
 from PyRetroPlayer.player_backends.libuade.ctypes_functions import libc, libuade
 from PyRetroPlayer.player_backends.player_backend import PlayerBackend
 
+UADE_SEMAPHORE = threading.Semaphore(1)
+
 
 class PlayerBackendLibUADE(PlayerBackend):
     def __init__(self, name: str = "LibUADE") -> None:
         super().__init__(name)
-        self.state_ptr: ctypes._Pointer[uade_state] = libuade.uade_new_state(None)  # type: ignore
+        self.state_ptr: ctypes._Pointer[uade_state] = None  # type: ignore
         self.config_ptr: ctypes._Pointer[uade_config] = libuade.uade_new_config()  # type: ignore
         # self.config = ctypes.cast(libuade.uade_new_config(), ctypes.POINTER(uade_config))
 
@@ -46,10 +49,20 @@ class PlayerBackendLibUADE(PlayerBackend):
         ]
 
     def check_module(self) -> bool:
+        with UADE_SEMAPHORE:
+            try:
+                return self._check_module_internal()
+            finally:
+                self.cleanup()
+
+    def _check_module_internal(self) -> bool:
         base = super().check_module()
 
         if not self.song or not base:
             return False
+
+        if not self.state_ptr:
+            self.state_ptr = libuade.uade_new_state(None)
 
         self.module_size = ctypes.c_size_t()
         ret = libuade.uade_read_file(
@@ -64,6 +77,11 @@ class PlayerBackendLibUADE(PlayerBackend):
         play_ret = libuade.uade_play_from_buffer(
             None, ret, self.module_size, -1, self.state_ptr
         )
+
+        if play_ret >= 1:
+            # immediately stop playback
+            libuade.uade_cleanup_state(self.state_ptr)
+            self.state_ptr = libuade.uade_new_state(None)
 
         # TODO: Check why this is freed here but then used in uade_play_from_buffer
         libc.free(ret)
@@ -81,7 +99,8 @@ class PlayerBackendLibUADE(PlayerBackend):
         if self.state_ptr:
             libuade.uade_cleanup_state(self.state_ptr)
 
-        self.state_ptr = libuade.uade_new_state(None)
+        if not self.state_ptr:
+            self.state_ptr = libuade.uade_new_state(None)
 
         if not self.state_ptr:
             raise Exception("uade_state is NULL")
